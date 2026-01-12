@@ -20,5 +20,109 @@ dependencies = { file = "requirements.txt" }
 
 [tool.setuptools.packages.find]
 where = ["."]
-include = ["my_task_package*"]
+include = ["decision_making*"]
 namespaces = false
+
+# Ruff configuration
+[tool.ruff]
+# Enable preview features for latest ruff capabilities
+preview = true
+# Same as Black.
+line-length = 130
+indent-width = 4
+
+# Target Python 3.8+
+target-version = "py38"
+
+# Exclude common directories
+exclude = [
+    ".bzr",
+    ".direnv",
+    ".eggs",
+    ".git",
+    ".git-rewrite",
+    ".hg",
+    ".ipynb_checkpoints",
+    ".mypy_cache",
+    ".nox",
+    ".pants.d",
+    ".pyenv",
+    ".pytest_cache",
+    ".pytype",
+    ".ruff_cache",
+    ".svn",
+    ".tox",
+    ".venv",
+    ".vscode",
+    "__pypackages__",
+    "_build",
+    "buck-out",
+    "build",
+    "dist",
+    "node_modules",
+    "site-packages",
+    "venv",
+]
+
+[tool.ruff.lint]
+# Enable Pyflakes (`F`) and a subset of the pycodestyle (`E`) codes by default.
+# Also enable flake8-bugbear (`B`), isort (`I`), and more
+select = [
+    "E",      # pycodestyle errors
+    "W",      # pycodestyle warnings
+    "F",      # Pyflakes
+    "I",      # isort
+    "B",      # flake8-bugbear
+    "C4",     # flake8-comprehensions
+    "UP",     # pyupgrade
+    "ARG",    # flake8-unused-arguments
+    "SIM",    # flake8-simplify
+    "TCH",    # flake8-type-checking
+    "PTH",    # flake8-use-pathlib
+    "RUF",    # Ruff-specific rules
+]
+
+# Ignore specific rules
+ignore = [
+    "E501",   # Line too long (handled by formatter)
+    "B008",   # Do not perform function calls in argument defaults
+    "B905",   # `zip()` without an explicit `strict=` parameter
+    "UP007",  # Use `X | Y` for type annotations (not compatible with Python 3.8)
+]
+
+# Allow fix for all enabled rules (when `--fix`) is provided.
+fixable = ["ALL"]
+unfixable = []
+
+# Allow unused variables when underscore-prefixed.
+dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
+
+[tool.ruff.lint.per-file-ignores]
+# Ignore all directories named `tests` and `test_*.py` files
+"tests/**/*.py" = ["ARG", "S"]
+"test_*.py" = ["ARG", "S"]
+# Ignore notebook-related issues
+"*.ipynb" = ["E402", "I001"]
+
+[tool.ruff.format]
+# Like Black, use double quotes for strings.
+quote-style = "double"
+
+# Like Black, indent with spaces, rather than tabs.
+indent-style = "space"
+
+# Like Black, respect magic trailing commas.
+skip-magic-trailing-comma = false
+
+# Like Black, automatically detect the appropriate line ending.
+line-ending = "auto"
+
+# Enable reformatting of code snippets in docstrings.
+docstring-code-format = true
+
+# Set the line length limit used when formatting code snippets in docstrings.
+docstring-code-line-length = "dynamic"
+
+[tool.ruff.lint.isort]
+known-first-party = ["decision_making"]
+force-sort-within-sections = true

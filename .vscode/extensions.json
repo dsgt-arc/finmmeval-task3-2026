@@ -1,0 +1,28 @@
+{
+    "recommendations": [
+        // Ruff - Fast Python linter and formatter (replaces Black, Flake8, isort, etc.)
+        "charliermarsh.ruff",
+
+        // Python language support
+        "ms-python.python",
+
+        // Jupyter Notebooks support
+        "ms-toolsai.jupyter",
+        "ms-toolsai.jupyter-keymap",
+        "ms-toolsai.jupyter-renderers",
+
+        // Python environment management
+        "donjayamanne.python-environment-manager",
+
+        // Additional helpful extensions for Python development
+        "ms-python.vscode-pylance",
+        "visualstudioexptteam.vscodeintellicode"
+    ],
+    "unwantedRecommendations": [
+        // Disable conflicting formatters/linters
+        "ms-python.black-formatter",
+        "ms-python.flake8",
+        "ms-python.isort",
+        "ms-python.pylint"
+    ]
+}

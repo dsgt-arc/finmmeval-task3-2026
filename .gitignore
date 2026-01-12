@@ -162,3 +162,17 @@ cython_debug/
 #.idea/
 
 *.out
+
+# Data directory
+data/
+
+# VS Code - track shared settings but ignore workspace-specific files
+.vscode/*
+!.vscode/settings.json
+!.vscode/extensions.json
+!.vscode/README.md
+!.vscode/launch.json
+!.vscode/tasks.json
+
+# Ruff cache
+.ruff_cache/
