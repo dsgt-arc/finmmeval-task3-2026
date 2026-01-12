@@ -1,8 +1,8 @@
+from contextlib import contextmanager
 import os
+from pathlib import Path
 import sys
 import time
-from contextlib import contextmanager
-from pathlib import Path
 
 from pyspark.sql import SparkSession
 
@@ -22,7 +22,8 @@ def get_spark(
     local_dir = f"{local_dir}/{int(time.time())}"
     Path(local_dir).mkdir(parents=True, exist_ok=True)
     builder = (
-        SparkSession.builder.config("spark.driver.memory", memory)
+        SparkSession.builder
+        .config("spark.driver.memory", memory)
         .config("spark.executor.memory", executor_memory)
         .config("spark.driver.cores", cores)
         .config("spark.sql.execution.arrow.pyspark.enabled", "true")

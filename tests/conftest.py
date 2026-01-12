@@ -1,5 +1,6 @@
 import pytest
-from my_task_package.spark import spark_resource
+
+from decision_making.spark import spark_resource
 
 
 @pytest.fixture(scope="session")
