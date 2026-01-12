@@ -74,6 +74,17 @@ ruff format .
 ruff check --fix .
 ```
 
+### Notebook Management
+```bash
+# IMPORTANT: Always clear notebook outputs before committing
+jupyter nbconvert --clear-output --inplace notebooks/**/*.ipynb
+
+# Clear outputs for a specific notebook
+jupyter nbconvert --clear-output --inplace notebooks/eda/my-notebook.ipynb
+```
+
+**Critical Rule:** Notebook outputs must ALWAYS be cleared before committing to keep the repository clean and avoid bloating git history with large output data.
+
 ## Architecture
 
 ### Package Structure
