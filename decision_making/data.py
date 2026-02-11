@@ -4,10 +4,16 @@ from huggingface_hub import hf_hub_download
 import polars as pl
 
 # HuggingFace dataset configuration
-HF_DATASET = "TheFinAI/CLEF_Task3_Trading"
+HF_DATASET = "TheFinAI/daily_news"
 SPLITS = {
+    # coins
     "BTC": "data/BTC-00000-of-00001.parquet",
+    "ETH": "data/ETH-00000-of-00001.parquet",
+    # stocks
     "TSLA": "data/TSLA-00000-of-00001.parquet",
+    "BMRN": "data/BMRN-00000-of-00001.parquet",
+    "MRNA": "data/MRNA-00000-of-00001.parquet",
+    "MSFT": "data/MSFT-00000-of-00001.parquet",
 }
 
 # Local data directory (at project root)
