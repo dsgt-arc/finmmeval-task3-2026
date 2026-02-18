@@ -1,3 +1,6 @@
+
+
+
 {
     // Python environment settings
     "python-envs.defaultEnvManager": "ms-python.python:conda",
@@ -34,11 +37,8 @@
     // Ruff extension settings
     "ruff.enable": true,
     "ruff.lint.enable": true,
-    "ruff.format.args": [],
-    "ruff.lint.args": [],
     "ruff.organizeImports": true,
     "ruff.fixAll": true,
-    "ruff.showNotifications": "onWarning",
 
     // Disable other formatters/linters to avoid conflicts
     "python.formatting.provider": "none",
