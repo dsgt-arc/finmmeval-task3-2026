@@ -1,0 +1,23 @@
+name: finmmeval
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - python>=3.8
+  - numpy
+  - pandas
+  - matplotlib
+  - scikit-learn
+  - tqdm
+  - pyspark>=3.4.0
+  - pyarrow
+  - polars
+  - pip
+  - pip:
+    - luigi
+    - huggingface_hub
+    # developer tools
+    - jupyterlab
+    - ruff
+    - pre-commit
+    - pytest
