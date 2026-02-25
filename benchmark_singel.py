@@ -1,7 +1,7 @@
 import polars as pl
 from scipy.sparse import csr_matrix, hstack
 
-from decision_making.data import load_data
+import decision_making.data as d
 from decision_making.logger import set_up_log
 from decision_making.models import (
     LogisticRegressionModel,
@@ -19,37 +19,27 @@ USE_STATSMODELS = True
 COMPARE_MODELS = False
 
 # Load data
-tsla = load_data(symbol="TSLA", download_if_missing=False)
-
-# Cols
-price_col = pl.col("prices")
-return_col = pl.col("returns")
-target_multi_col = pl.col("target_mulit")
-target_bin_col = pl.col("target_binary")
-date_col = pl.col("date")
-text_col = pl.col("news")
-text_len_col = pl.col("news_length")
-text_str_col = pl.col("news_str")
+tsla = d.load_data(symbol="TSLA", download_if_missing=False)
 
 # Label
-tsla = tsla.sort(date_col).with_columns(price_col.pct_change().alias(return_col.meta.output_name()))
+tsla = tsla.sort(d.date_col).with_columns(d.price_col.pct_change().alias(d.return_col.meta.output_name()))
 # Multi-class classification: 1 for positive return, -1 for negative return, 0 for no change
 tsla = tsla.with_columns(
-    pl.when(return_col > 0)
+    pl.when(d.return_col > 0)
     .then(1)
-    .when(return_col < 0)
+    .when(d.return_col < 0)
     .then(-1)
     .otherwise(0)
     .shift(-1)
-    .alias(target_multi_col.meta.output_name())
+    .alias(d.target_multi_col.meta.output_name())
 )
 # Binary classification: 1 for positive return, 0 for negative or no change
-tsla = tsla.with_columns(pl.when(return_col > 0).then(1).otherwise(0).shift(-1).alias(target_bin_col.meta.output_name()))
+tsla = tsla.with_columns(pl.when(d.return_col > 0).then(1).otherwise(0).shift(-1).alias(d.target_bin_col.meta.output_name()))
 # Drop NanNs after shift
-tsla = tsla.drop_nulls(subset=[target_multi_col.meta.output_name(), target_bin_col.meta.output_name()])
+tsla = tsla.drop_nulls(subset=[d.target_multi_col.meta.output_name(), d.target_bin_col.meta.output_name()])
 
 # numerical features
-num_feature_raw = tsla.select(date_col, price_col).to_pandas()
+num_feature_raw = tsla.select(d.date_col, d.price_col).to_pandas()
 
 technical_analyses = get_technical_analyses(num_feature_raw)
 technical_features = standardize_technical_signals(
@@ -59,9 +49,10 @@ technical_features_sparse = csr_matrix(technical_features[["trend", "mean_revers
 
 
 # text features
-tsla = tsla.with_columns(text_col.list.len().alias(text_len_col.meta.output_name()))
-tsla = tsla.with_columns(text_col.list.join(". ").alias(text_str_col.meta.output_name()))
-texts = tsla.get_column(text_str_col.meta.output_name()).to_list()
+tsla = tsla.with_columns(d.text_len_col.meta.output_name())
+
+tsla = tsla.with_columns(d.text_col.list.join(". ").alias(d.text_str_col.meta.output_name()))
+texts = tsla.get_column(d.text_str_col.meta.output_name()).to_list()
 dictionary, bow_corpus, matrix = text_processing_pipeline(texts, clip=True, prune_dict=True)
 
 # combine numerical and technical featrues
@@ -69,7 +60,7 @@ X_final = hstack([matrix, technical_features_sparse]).toarray()
 
 
 # Classification
-y = tsla.get_column(target_bin_col.meta.output_name()).to_numpy()
+y = tsla.get_column(d.target_bin_col.meta.output_name()).to_numpy()
 
 # Simple train/test split (temporal)
 X_train, X_test, y_train, y_test = train_test_split_temporal(X_final, y, test_size=0.2)

@@ -1,23 +1,41 @@
+
+
+
 name: finmmeval
 channels:
   - conda-forge
   - defaults
 dependencies:
-  - python>=3.8
+  - python>=3.11
   - numpy
   - pandas
   - matplotlib
   - scikit-learn
+  - pyyaml
+  - python-dotenv
+  - statsmodels
+  - gensim
   - tqdm
   - pyspark>=3.4.0
   - pyarrow
   - polars
   - pip
   - pip:
-    - luigi
     - huggingface_hub
+    - torch
+    - tiktoken
     # developer tools
     - jupyterlab
     - ruff
     - pre-commit
     - pytest
+    # deepfund
+    - pydantic
+    - supabase
+    - langgraph
+    - typing-extensions
+    - langchain-openai
+    - langchain-anthropic
+    - langchain-deepseek
+    - langchain-ollama
+    - langchain-fireworks
