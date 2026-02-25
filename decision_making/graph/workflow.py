@@ -34,6 +34,7 @@ class AgentWorkflow:
 
         # Initialize workflow configuration
         self.planner_mode = config.get("planner_mode", False)
+        self.sequential_mode = config.get("sequential_mode", False)
 
         # Verify workflow analysts
         if not config.get("workflow_analysts"):
@@ -57,12 +58,22 @@ class AgentWorkflow:
         portfolio_agent = AgentRegistry.get_agent_func_by_key(AgentKey.PORTFOLIO)
         graph.add_node(AgentKey.PORTFOLIO, portfolio_agent)
 
-        # create node for each analyst and add edge
-        for analyst in self.current_analysts:
-            agent_func = AgentRegistry.get_agent_func_by_key(analyst)
-            graph.add_node(analyst, agent_func)
-            graph.add_edge(START, analyst)
-            graph.add_edge(analyst, AgentKey.PORTFOLIO)
+        prev_node = START
+        if self.sequential_mode:
+            # Sequential execution: chain analysts in config order
+            for analyst in self.current_analysts:
+                agent_func = AgentRegistry.get_agent_func_by_key(analyst)
+                graph.add_node(analyst, agent_func)
+                graph.add_edge(prev_node, analyst)
+                prev_node = analyst  # overwrite prev_node to create a chain
+            graph.add_edge(prev_node, AgentKey.PORTFOLIO)
+        else:
+            # Parallel execution (does not overwrite prev_node)
+            for analyst in self.current_analysts:
+                agent_func = AgentRegistry.get_agent_func_by_key(analyst)
+                graph.add_node(analyst, agent_func)
+                graph.add_edge(prev_node, analyst)
+                graph.add_edge(analyst, AgentKey.PORTFOLIO)
 
         # Route portfolio manager to end
         graph.add_edge(AgentKey.PORTFOLIO, END)

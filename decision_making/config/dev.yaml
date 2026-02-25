@@ -5,19 +5,19 @@ exp_name: "dev"
 cashflow: 100000
 tickers:
   - TSLA
-  - NVDA
+  - BTC
 
+
+# Workflow execution mode
+sequential_mode: false  # false for parallel, true for sequential execution
 
 # Analysts to run, refer to graph.constants.py
 workflow_analysts:
-  - fundamental
-  - macroeconomic
+  #- dummy
   - technical
   - company_news
-  - insider
-  - policy
 
 # LLM model settings, refer to llm/inference.py: LLMConfig
 llm:
-  provider: "DeepSeek"
-  model: "deepseek-chat" # DeepSeek-V3
+  provider: "OpenAI"
+  model: "gpt-4o-mini" # DeepSeek-V3

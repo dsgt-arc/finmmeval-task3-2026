@@ -1,13 +1,17 @@
+import datetime
 import math
 
-from apis.router import APISource, Router
 from graph.constants import AgentKey, Signal
 from graph.schema import AnalystSignal, FundState
+from llm.cost_estimation import estimate_cost
 from llm.inference import agent_call
 from llm.prompt import TECHNICAL_PROMPT
 import pandas as pd
+import polars as pl
 from util.db_helper import get_db
 from util.logger import logger
+
+from decision_making.data import load_specific_data
 
 # Technical Thresholds
 thresholds = {
@@ -52,9 +56,13 @@ def technical_agent(state: FundState):
     logger.log_agent_status(agent_name, ticker, "Analyzing price data")
 
     # Get the price data
-    router = Router(APISource.ALPHA_VANTAGE)
     try:
-        prices_df = router.get_us_stock_daily_candles_df(ticker=ticker, trading_date=trading_date)
+        # access t-1 news data for ticker
+        historic_date = trading_date - datetime.timedelta(days=1)
+        prices_df = load_specific_data(symbol=ticker, date=historic_date, type="price")
+        prices_df = (
+            prices_df.with_columns(pl.col("prices").alias("close"))
+        ).to_pandas()  # Convert to pandas for easier technical analysis calculations
     except Exception as e:
         logger.error(f"Failed to fetch price data for {ticker}: {e}")
         return state
@@ -65,12 +73,16 @@ def technical_agent(state: FundState):
         "mean_reversion": get_mean_reversion_signal(prices_df, thresholds["mean_reversion"]),
         "rsi": get_rsi_signal(prices_df, thresholds["rsi"]),
         "volatility": get_volatility_signal(prices_df, thresholds["volatility"]),
-        "volume": get_volume_analysis(prices_df, thresholds["volume"]),
+        # "volume": get_volume_analysis(prices_df, thresholds["volume"]),
         "price_levels": get_support_resistance(prices_df, thresholds["support_resistance"]),
     }
 
     # Make prompt
     prompt = TECHNICAL_PROMPT.format(ticker=ticker, analysis=signal_results)
+
+    # Estimate and log cost before making the call
+    costs = estimate_cost(prompt, llm_config)
+    logger.info(f"[{agent_name}] Estimated cost for {ticker}: ${costs:.6f}")
 
     # Get LLM signal
     signal = agent_call(prompt=prompt, llm_config=llm_config, pydantic_model=AnalystSignal)

@@ -72,7 +72,7 @@ class SQLiteDB(BaseDB):
                 """
                 INSERT INTO config (id, exp_name, updated_at, tickers, has_planner, llm_model, llm_provider)
                 VALUES (?, ?, ?, ?, ?, ?, ?)
-            """,
+                """,
                 (
                     config_id,
                     config["exp_name"],

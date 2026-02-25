@@ -1,5 +1,4 @@
 from database.sqlite_helper import SQLiteDB
-from database.supabase_helper import SupabaseDB
 from util.logger import logger
 
 # global variable that will be set in main.py
@@ -13,8 +12,7 @@ def db_initialize(use_local_db: bool = False):
         _db = SQLiteDB()
         logger.info("SQLite database initialized")
     else:
-        _db = SupabaseDB()
-        logger.info("Supabase database initialized")
+        pass  # TODO: initialize the connection to other  database here
     db = _db
 
 

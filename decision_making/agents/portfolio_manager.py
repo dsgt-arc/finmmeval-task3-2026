@@ -1,10 +1,13 @@
-from apis.router import APISource, Router
+import datetime
+
 from graph.constants import Action, AgentKey
 from graph.schema import Decision, FundState, PositionRisk
 from llm.inference import agent_call
 from llm.prompt import PORTFOLIO_PROMPT, RISK_CONTROL_PROMPT
 from util.db_helper import get_db
 from util.logger import logger
+
+from decision_making.data import load_specific_data
 
 # Portfolio Manager Thresholds
 thresholds = {"decision_memory_limit": 5}
@@ -25,9 +28,11 @@ def portfolio_agent(state: FundState):
     db = get_db()
 
     # Get price data
-    router = Router(APISource.ALPHA_VANTAGE)
+    # Get the price data
     try:
-        current_price = router.get_us_stock_last_close_price(ticker=ticker, trading_date=trading_date)
+        # access t-1 news data for ticker
+        historic_date = trading_date - datetime.timedelta(days=1)
+        current_price = load_specific_data(symbol=ticker, date=historic_date, type="current_price")
     except Exception as e:
         logger.error(f"Failed to fetch price data for {ticker}: {e}")
         raise RuntimeError("Failed to make decision")

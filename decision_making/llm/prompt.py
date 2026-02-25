@@ -31,9 +31,6 @@ Mean Reversion and Momentum:
 - RSI: {analysis[rsi]}
 - Volatility: {analysis[volatility]}
 
-Volume Analysis:
-{analysis[volume]}
-
 Support and Resistance Levels:
 {analysis[price_levels]}
 

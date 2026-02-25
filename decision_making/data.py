@@ -1,3 +1,4 @@
+import datetime
 from pathlib import Path
 
 from huggingface_hub import hf_hub_download
@@ -7,17 +8,40 @@ import polars as pl
 HF_DATASET = "TheFinAI/daily_news"
 SPLITS = {
     # coins
-    "BTC": "data/BTC-00000-of-00001.parquet",
-    "ETH": "data/ETH-00000-of-00001.parquet",
+    "BTC": "data_new/BTC-00000-of-00001.parquet",
+    "ETH": "data_new/ETH-00000-of-00001.parquet",
     # stocks
-    "TSLA": "data/TSLA-00000-of-00001.parquet",
-    "BMRN": "data/BMRN-00000-of-00001.parquet",
-    "MRNA": "data/MRNA-00000-of-00001.parquet",
-    "MSFT": "data/MSFT-00000-of-00001.parquet",
+    "TSLA": "data_new/TSLA-00000-of-00001.parquet",
+    "BMRN": "data_new/BMRN-00000-of-00001.parquet",
+    "MRNA": "data_new/MRNA-00000-of-00001.parquet",
+    "MSFT": "data_new/MSFT-00000-of-00001.parquet",
 }
+
+SPLITS_OLD = {
+    # coins
+    "BTC": "data_old/BTC-00000-of-00001.parquet",
+    # stocks
+    "TSLA": "data_old/TSLA-00000-of-00001.parquet",
+}
+
 
 # Local data directory (at project root)
 DATA_DIR = Path(__file__).parent.parent / "data"
+DATA_DIR_OLD = Path(__file__).parent.parent / "data"
+
+
+# Symbols for panel
+SYMBOLS = ["TSLA", "BMRN", "MRNA", "MSFT"]
+
+# Polars column expressions
+price_col = pl.col("prices")
+return_col = pl.col("returns")
+target_multi_col = pl.col("target_mulit")
+target_bin_col = pl.col("target_binary")
+date_col = pl.col("date")
+text_col = pl.col("news")
+text_len_col = pl.col("news_length")
+text_str_col = pl.col("news_str")
 
 
 def download_data(symbol: str, force_download: bool = False) -> Path:
@@ -66,21 +90,20 @@ def download_all_data(force_download: bool = False) -> dict[str, Path]:
     return downloaded
 
 
-def load_data(symbol: str, download_if_missing: bool = True) -> pl.DataFrame:
+def load_data(symbol: str, download_if_missing: bool = True, old_data: bool = True) -> pl.DataFrame:
     """
     Load data for a specific symbol.
 
     Args:
         symbol: The trading symbol (e.g., 'BTC', 'TSLA')
         download_if_missing: If True, download data if not found locally
-
+        old_data: If True, load from old data directory (has more history)
     Returns:
         Polars DataFrame with the trading data
     """
     if symbol not in SPLITS:
         raise ValueError(f"Unknown symbol: {symbol}. Available: {list(SPLITS.keys())}")
-
-    local_path = DATA_DIR / SPLITS[symbol]
+    local_path = DATA_DIR_OLD / SPLITS_OLD[symbol] if old_data else DATA_DIR / SPLITS[symbol]
 
     # Download if file doesn't exist and download_if_missing is True
     if not local_path.exists() and download_if_missing:
@@ -90,3 +113,37 @@ def load_data(symbol: str, download_if_missing: bool = True) -> pl.DataFrame:
         raise FileNotFoundError(f"Data file not found: {local_path}")
 
     return pl.read_parquet(local_path)
+
+
+def load_specific_data(
+    symbol: str, date: str, type: str, download_if_missing: bool = True, old_data: bool = True
+) -> pl.DataFrame:
+    """Load data for a specific symbol, date, and type.
+    Args:
+    symbol: The trading symbol (e.g., 'BTC', 'TSLA')
+    date: The date to filter by (format 'YYYY-MM-DD')
+    type: The type to filter by (e.g., 'news', 'social_media')
+    download_if_missing: If True, download data if not found locally
+    old_data: If True, load from old data directory (has more history)
+    Returns:
+    str | pl.DataFrame: Either a string (for news) or a DataFrame (for price)
+    """
+
+    symbol_data = load_data(symbol, download_if_missing=download_if_missing, old_data=old_data)
+    # cast date column to datetime
+    symbol_data = symbol_data.with_columns(date_col.cast(datetime.date))
+    if type == "news":
+        # news is focusing just on the news of day t-1
+        date_data = symbol_data.filter(date_col == date)
+        specific_date_data = date_data.select(text_col).item().item()
+    elif type == "price":
+        # price needs to include all data up to day t-1 for technical analysis
+        date_data = symbol_data.filter(date_col <= date)
+        specific_date_data = date_data.select(date_col, price_col)
+    elif type == "current_price":
+        # current price is the price of the specific date
+        date_data = symbol_data.filter(date_col == date)
+        specific_date_data = date_data.select(price_col).item()
+    else:
+        raise ValueError(f"Unknown type: {type}. Available types: 'news', 'price'")
+    return specific_date_data

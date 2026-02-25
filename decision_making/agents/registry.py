@@ -20,6 +20,7 @@ class AgentRegistry:
         AgentKey.COMPANY_NEWS,
         AgentKey.MACROECONOMIC,
         AgentKey.POLICY,
+        AgentKey.DUMMY,
     ]
 
     @classmethod
@@ -66,18 +67,6 @@ class AgentRegistry:
         )
 
         cls.register_agent(
-            key=AgentKey.FUNDAMENTAL,
-            agent_func=fundamental_agent,
-            agent_doc="Fundamental analysis specialist focusing on company financial health and valuation.",
-        )
-
-        cls.register_agent(
-            key=AgentKey.INSIDER,
-            agent_func=insider_agent,
-            agent_doc="Insider trading specialist analyzing insider activity patterns.",
-        )
-
-        cls.register_agent(
             key=AgentKey.COMPANY_NEWS,
             agent_func=company_news_agent,
             agent_doc="Company news specialist analyzing company news and media coverage.",
@@ -90,13 +79,7 @@ class AgentRegistry:
         )
 
         cls.register_agent(
-            key=AgentKey.MACROECONOMIC,
-            agent_func=macroeconomic_agent,
-            agent_doc="Macroeconomic analysis specialist focusing on economic indicators, interest rates, inflation and market trends.",
-        )
-
-        cls.register_agent(
-            key=AgentKey.POLICY,
-            agent_func=policy_agent,
-            agent_doc="Policy analysis specialist focusing on fiscal and monetary policy.",
+            key=AgentKey.DUMMY,
+            agent_func=dummy_agent,
+            agent_doc="Dummy analyst for debugging - returns neutral signal with no analysis.",
         )

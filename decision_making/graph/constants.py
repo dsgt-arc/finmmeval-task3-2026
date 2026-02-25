@@ -9,9 +9,10 @@ class AgentKey:
     COMPANY_NEWS = "company_news"
     MACROECONOMIC = "macroeconomic"
     POLICY = "policy"
+    DUMMY = "dummy"
     # workflow keys
-    PORTFOLIO = "portfolio manager"
-    PLANNER = "analyst planner"
+    PORTFOLIO = "portfolio_manager"
+    PLANNER = "analyst_planner"
 
 
 class Signal(str, Enum):
