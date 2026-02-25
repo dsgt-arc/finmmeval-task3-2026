@@ -21,9 +21,9 @@ dependencies:
   - polars
   - pip
   - pip:
-    - luigi
     - huggingface_hub
     - torch
+    - tiktoken
     # developer tools
     - jupyterlab
     - ruff
