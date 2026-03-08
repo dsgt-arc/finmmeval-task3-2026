@@ -107,13 +107,15 @@ def calculate_ticker_shares(portfolio, current_price, ticker, optimal_position_r
         current_shares = portfolio.positions[ticker].shares
     # current value for the ticker
     current_value = current_shares * current_price
-    # total portfolio value
+    # total portfolio value (cash + all positions)
     total_portfolio_value = portfolio.cashflow + sum(portfolio.positions[t].value for t in portfolio.positions)
-    # position limit for the ticker
+    # position limit for the ticker based on optimal position ratio frin risk control
     position_limit = total_portfolio_value * optimal_position_ratio
-    # position value gap
+    # position value gap to reach the optimal position
     position_value_gap = position_limit - current_value
 
+    # calculate tradable shares based on position value gap and current price,
+    # also consider the cashflow limit for buying and current shares for selling
     if (
         position_value_gap > 0
     ):  # still have room to buy, maximum tradable cash is the minor between position_value_gap and cashflow
@@ -121,4 +123,9 @@ def calculate_ticker_shares(portfolio, current_price, ticker, optimal_position_r
     else:  # need to sell, maximun selling shares is the minor between position gap and current shares
         tradable_shares = max(position_value_gap // current_price, -current_shares)
 
+    logger.info(
+        f"Ticker {ticker}: current shares={current_shares}, current price={current_price}, "
+        f"position limit=${position_limit:.2f}, position value gap=${position_value_gap:.2f}, "
+        f"tradable shares={tradable_shares}"
+    )
     return current_shares, tradable_shares

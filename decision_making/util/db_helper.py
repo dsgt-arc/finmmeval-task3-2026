@@ -1,5 +1,5 @@
-from database.sqlite_helper import SQLiteDB
-from util.logger import logger
+from decision_making.database.sqlite_helper import SQLiteDB
+from decision_making.util.logger import logger
 
 # global variable that will be set in main.py
 db = None
