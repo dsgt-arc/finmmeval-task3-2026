@@ -2,7 +2,7 @@ import numpy as np
 import pandas as pd
 import polars as pl
 
-import decision_making.data as d
+import decision_making.ama_data as d
 from decision_making.logger import set_up_log
 from decision_making.models import (
     StatsmodelsLogitModel,

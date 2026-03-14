@@ -11,7 +11,7 @@ import polars as pl
 from util.db_helper import get_db
 from util.logger import logger
 
-from decision_making.data import load_specific_data
+from decision_making.ama_data import load_specific_data
 
 # Technical Thresholds
 thresholds = {

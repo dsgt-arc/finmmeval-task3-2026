@@ -7,7 +7,7 @@ from llm.prompt import PORTFOLIO_PROMPT, RISK_CONTROL_PROMPT
 from util.db_helper import get_db
 from util.logger import logger
 
-from decision_making.data import load_specific_data
+from decision_making.ama_data import load_specific_data
 
 # Portfolio Manager Thresholds
 thresholds = {"decision_memory_limit": 5}

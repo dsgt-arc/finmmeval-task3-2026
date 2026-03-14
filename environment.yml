@@ -39,3 +39,5 @@ dependencies:
     - langchain-deepseek
     - langchain-ollama
     - langchain-fireworks
+    # external data
+    - yfinance
