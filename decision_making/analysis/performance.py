@@ -169,7 +169,7 @@ def calculate_buy_hold_benchmark(
         DataFrame with columns: date, price, portfolio_value, cumulative_return_pct
     """
     # Load price data
-    price_data = load_data(ticker, old_data=True)
+    price_data = load_data(ticker, competition_data=True)
 
     # Ensure date column is datetime
     if "date" not in price_data.columns:
