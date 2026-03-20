@@ -135,8 +135,11 @@ def load_specific_data(
     """
 
     symbol_data = load_data(symbol, download_if_missing=download_if_missing, competition_data=competition_data)
-    # cast date column to datetime
+    # cast date column to datetime/date for reliable comparisons
     symbol_data = symbol_data.with_columns(date_col.cast(datetime.date))
+
+    if isinstance(date, str):
+        date = datetime.date.fromisoformat(date)
     if type == "news":
         # news is focusing just on the news of day t-1
         date_data = symbol_data.filter(date_col == date)
