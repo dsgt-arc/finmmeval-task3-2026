@@ -1,8 +1,9 @@
 import datetime
+import os
 from pathlib import Path
 
-from huggingface_hub import hf_hub_download
 import polars as pl
+from huggingface_hub import hf_hub_download
 
 # HuggingFace dataset configuration
 HF_DATASET_AMA = "TheFinAI/daily_news"  # data of the Agents Market Arena (AMA) with more assets
@@ -20,9 +21,9 @@ SPLITS_AMA = {
 HF_DATASET_COMPETITION = "TheFinAI/CLEF_Task3_Trading"  # includes TSLA and BTC
 SPLITS_COMPETITION = {
     # coins
-    "BTC": "data_old/BTC-00000-of-00001.parquet",
+    "BTC": "data/BTC-00000-of-00001.parquet",
     # stocks
-    "TSLA": "data_old/TSLA-00000-of-00001.parquet",
+    "TSLA": "data/TSLA-00000-of-00001.parquet",
 }
 
 
@@ -104,7 +105,10 @@ def load_data(symbol: str, download_if_missing: bool = True, competition_data: b
     """
     if symbol not in SPLITS_AMA:
         raise ValueError(f"Unknown symbol: {symbol}. Available: {list(SPLITS_AMA.keys())}")
-    local_path = DATA_DIR / SPLITS_AMA[symbol] if competition_data else DATA_DIR_COMPETITION / SPLITS_COMPETITION[symbol]
+    if competition_data:
+        local_path = DATA_DIR / "data" / Path(SPLITS_COMPETITION[symbol]).name
+    else:
+        local_path = DATA_DIR / "data_new" / Path(SPLITS_AMA[symbol]).name
 
     # Download if file doesn't exist and download_if_missing is True
     if not local_path.exists() and download_if_missing:

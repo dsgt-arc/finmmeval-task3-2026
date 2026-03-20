@@ -49,7 +49,7 @@ ticker = config["tickers"][0]
 print(f"Loading data for {ticker} to determine date range...", file=sys.stderr, flush=True)
 
 # Load data and get date range
-df = load_data(ticker, download_if_missing=True, old_data=True)
+df = load_data(ticker, download_if_missing=True, competition_data=True)
 min_date = df["date"].min()
 max_date = df["date"].max()
 
@@ -104,11 +104,15 @@ echo ""
 # Use Python to generate and iterate dates (cross-platform)
 python3 << EOF
 from datetime import datetime, timedelta
+import os
 import subprocess
 import sys
 
 start = datetime.strptime("$START_DATE", "%Y-%m-%d")
 end = datetime.strptime("$END_DATE", "%Y-%m-%d")
+repo_root = os.path.abspath(".")
+env = os.environ.copy()
+env["PYTHONPATH"] = f"{repo_root}/decision_making:{repo_root}"
 
 if start > end:
     print("Error: start_date must be <= end_date")
@@ -124,11 +128,12 @@ while current <= end:
     print(f"=== Processing date {day_num}/{total_days}: {trading_date} ===")
 
     result = subprocess.run([
-        "python", "run_decision_making.py",
-        "--config", "../$CONFIG_PATH",
+        sys.executable,
+        "decision_making/run_decision_making.py",
+        "--config", "$CONFIG_PATH",
         "--trading-date", trading_date,
         "--local-db"
-    ], cwd="decision_making")
+    ], cwd=repo_root, env=env)
 
     if result.returncode != 0:
         print(f"Error processing {trading_date}")

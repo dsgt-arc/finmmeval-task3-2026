@@ -2,13 +2,14 @@ import argparse
 from typing import Any, Dict
 
 from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv()
+
 from graph.workflow import AgentWorkflow
 from util.config import ConfigParser
 from util.db_helper import db_initialize, get_db
 from util.logger import logger
-
-# Load environment variables from .env file
-load_dotenv()
 
 
 def load_portfolio_config(cfg: Dict[str, Any], db):
