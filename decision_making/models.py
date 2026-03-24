@@ -8,6 +8,8 @@ predict(), predict_proba(), and score() methods.
 from abc import ABC, abstractmethod
 
 import numpy as np
+import pandas as pd
+from sklearn.ensemble import RandomForestClassifier
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import accuracy_score
 from sklearn.naive_bayes import MultinomialNB
@@ -202,6 +204,90 @@ class MultinomialNBModel(SklearnModel):
         """Initialize Multinomial Naive Bayes model."""
         super().__init__()
         self._model = MultinomialNB(alpha=alpha, fit_prior=fit_prior)
+
+
+class RandomForestReturnModel(SklearnModel):
+    """Random Forest classifier for return direction prediction.
+
+    Wraps sklearn's RandomForestClassifier with financial market-specific defaults.
+    Designed for cross-sectional prediction of stock return direction (up/down).
+
+    The default hyperparameters are conservative to prevent overfitting in financial
+    time series data:
+    - Moderate tree depth to avoid fitting noise
+    - High minimum samples per split/leaf to ensure statistical significance
+    - Balanced class weights to handle return distribution imbalances
+
+    Args:
+        n_estimators: Number of trees in forest (default: 100)
+        max_depth: Maximum depth of trees (default: 10 to prevent overfitting)
+        min_samples_split: Minimum samples to split node (default: 100 for large datasets)
+        min_samples_leaf: Minimum samples in leaf (default: 50)
+        max_features: Number of features per split (default: 'sqrt')
+        class_weight: Handle class imbalance (default: 'balanced')
+        random_state: Random seed for reproducibility (default: 42)
+        n_jobs: Parallel jobs (default: -1 for all cores)
+
+    Example:
+        >>> model = RandomForestReturnModel(n_estimators=200, max_depth=15)
+        >>> model.fit(X_train, y_train)
+        >>> accuracy = model.score(X_test, y_test)
+        >>> feature_importance = model.get_feature_importance(feature_names)
+    """
+
+    def __init__(
+        self,
+        n_estimators=100,
+        max_depth=10,
+        min_samples_split=100,
+        min_samples_leaf=50,
+        max_features="sqrt",
+        class_weight="balanced",
+        random_state=42,
+        n_jobs=-1,
+    ):
+        """Initialize Random Forest model."""
+        super().__init__()
+        self._model = RandomForestClassifier(
+            n_estimators=n_estimators,
+            max_depth=max_depth,
+            min_samples_split=min_samples_split,
+            min_samples_leaf=min_samples_leaf,
+            max_features=max_features,
+            class_weight=class_weight,
+            random_state=random_state,
+            n_jobs=n_jobs,
+        )
+
+    def get_feature_importance(self, feature_names: list[str]) -> pd.DataFrame:
+        """Return feature importances as sorted DataFrame.
+
+        Args:
+            feature_names: List of feature names corresponding to training columns
+
+        Returns:
+            DataFrame with columns:
+                - feature: feature name
+                - importance: importance value (sum to 1.0)
+            Sorted by importance in descending order.
+
+        Raises:
+            ValueError: If model hasn't been fitted yet
+
+        Example:
+            >>> model.fit(X_train, y_train)
+            >>> importance_df = model.get_feature_importance(feature_cols)
+            >>> print(importance_df.head(10))  # Top 10 features
+        """
+        if self._model is None or not hasattr(self._model, "feature_importances_"):
+            raise ValueError("Model must be fitted before accessing feature importance")
+
+        importance_df = pd.DataFrame(
+            {"feature": feature_names, "importance": self._model.feature_importances_}
+        )
+        return importance_df.sort_values("importance", ascending=False).reset_index(
+            drop=True
+        )
 
 
 class StatsmodelsLogitModel(BaseModel):
