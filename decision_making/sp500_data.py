@@ -6,6 +6,7 @@ import yfinance as yf
 SP500_SOURCE = "https://yfiua.github.io/index-constituents/constituents-sp500.csv"
 
 DATA_DIR = Path(__file__).parent.parent / "data" / "data_sp500"
+DATA_FILE = Path("stock_data_long.csv")
 
 
 def get_stock_data(symbols, start="2000-01-01", end=None, batch_size=100):
@@ -140,3 +141,97 @@ def print_metrics_coverage(df: pd.DataFrame) -> None:
     for col in df.columns:
         pct_avail = (df[col].notna().sum() / len(df)) * 100
         print(f"  - {col}: {pct_avail:.1f}% available")
+
+
+def load_single_stocks(path: Path = DATA_DIR / DATA_FILE, min_obs: int = 400) -> pd.DataFrame:
+    """
+    Load stock returns computed from adjusted close prices.
+    """
+    # Try loading from new long-format data
+    adj_close = load_stock_metric_long("Adj_Close", path, min_obs=min_obs).astype(float)  # Don't filter yet
+
+    # Compute returns for each stock
+    returns = adj_close.pct_change()
+
+    return returns
+
+
+def load_stock_metric_long(metric_name: str, path: Path = DATA_DIR / DATA_FILE, min_obs: int = 400) -> pd.DataFrame:
+    """
+    Load a specific metric from long-format stock data.
+
+    Args:
+        metric_name: Name of metric to load (e.g., 'Vol_21d', 'Market_Cap', 'Book_to_Market')
+        path: Path to long-format CSV file
+        min_obs: Minimum number of observations required per stock
+
+    Returns:
+        Wide-format DataFrame with date index and ticker columns
+    """
+    df = pd.read_csv(path)
+
+    # Filter for requested metric
+    metric_df = df[df["Metric"] == metric_name].copy()
+
+    if metric_df.empty:
+        raise ValueError(f"Metric '{metric_name}' not found in data. Available metrics: {df['Metric'].unique().tolist()}")
+
+    # Pivot to wide format
+    df_wide = metric_df.pivot(index="Date", columns="Ticker", values="Value")
+    df_wide.index.name = "date"
+    df_wide.index = pd.to_datetime(df_wide.index)
+
+    # Filter stocks with sufficient history
+    long_history_stocks = df_wide.describe().loc["count"][df_wide.describe().loc["count"] > min_obs].index
+
+    df_wide = df_wide[long_history_stocks].dropna(axis="index", how="all")
+    return df_wide
+
+
+def load_stock_volatility(path: Path = DATA_DIR / DATA_FILE, min_obs: int = 400) -> pd.DataFrame:
+    """
+    Load 21-day rolling volatility for individual stocks.
+
+    Returns wide-format DataFrame with annualized volatility values.
+    """
+    return load_stock_metric_long("Vol_21d", path, min_obs)
+
+
+def load_stock_market_cap(path: Path = DATA_DIR / DATA_FILE, min_obs: int = 400) -> pd.DataFrame:
+    """
+    Load market capitalization for individual stocks.
+
+    Returns wide-format DataFrame with market cap values.
+    """
+    return load_stock_metric_long("Market_Cap", path, min_obs)
+
+
+def load_stock_book_to_market(path: Path = DATA_DIR / DATA_FILE, min_obs: int = 400) -> pd.DataFrame:
+    """
+    Load book-to-market ratio for individual stocks.
+
+    Book-to-market = Total Stockholder Equity / Market Cap
+    Note: Equity data is lagged by 4 months to account for reporting delays.
+
+    Returns wide-format DataFrame with book-to-market values.
+    """
+    return load_stock_metric_long("Book_to_Market", path, min_obs)
+
+
+def load_stock_total_equity(path: Path = DATA_DIR / DATA_FILE, min_obs: int = 400) -> pd.DataFrame:
+    """
+    Load total stockholder equity for individual stocks.
+
+    Note: Equity data is lagged by 4 months to account for reporting delays.
+
+    Returns wide-format DataFrame with total equity values.
+    """
+    return load_stock_metric_long("Total_Equity", path, min_obs)
+
+
+def load_stock_sector(path: Path = DATA_DIR / DATA_FILE, min_obs: int = 400) -> pd.DataFrame:
+    """
+    Load sector for individual stocks.
+    """
+    sector = load_stock_metric_long("Sector", path, min_obs)
+    return sector

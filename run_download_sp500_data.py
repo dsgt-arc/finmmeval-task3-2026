@@ -2,6 +2,7 @@ import pandas as pd
 
 from decision_making.sp500_data import (
     DATA_DIR,
+    DATA_FILE,
     SP500_SOURCE,
     convert_to_long_format,
     get_sector,
@@ -28,7 +29,7 @@ data_long = convert_to_long_format(merged)
 
 print("\nSaving data to CSV files...")
 # Save long format
-long_path = DATA_DIR / "stock_data_long.csv"
+long_path = DATA_DIR / DATA_FILE
 if not long_path.exists():
     long_path.parent.mkdir(parents=True, exist_ok=True)
 data_long.to_csv(long_path, index=False)
