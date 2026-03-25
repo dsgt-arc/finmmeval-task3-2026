@@ -1,3 +1,6 @@
+%% Internal DeepFund workflow diagram.
+%% This shows the `decision_making` path, not the API wrapper.
+
 flowchart TD
     A[Data t-1] --> |News Summary| B[News Analyst]
     B[News Analyst] --> |Tool| L[Sentiment Classification]
