@@ -9,8 +9,8 @@ from typing import Optional
 import numpy as np
 import polars as pl
 
+from decision_making.ama_data import load_data
 from decision_making.analysis.queries import get_all_portfolio_records
-from decision_making.data import load_data
 from decision_making.database.sqlite_helper import SQLiteDB
 
 
