@@ -109,7 +109,7 @@ def calculate_ticker_shares(portfolio, current_price, ticker, optimal_position_r
     current_value = current_shares * current_price
     # total portfolio value (cash + all positions)
     total_portfolio_value = portfolio.cashflow + sum(portfolio.positions[t].value for t in portfolio.positions)
-    # position limit for the ticker based on optimal position ratio frin risk control
+    # position limit for the ticker based on optimal position ratio from risk control
     position_limit = total_portfolio_value * optimal_position_ratio
     # position value gap to reach the optimal position
     position_value_gap = position_limit - current_value

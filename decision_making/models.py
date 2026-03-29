@@ -332,7 +332,7 @@ class StatsmodelsLogitModel(BaseModel):
             self: Fitted model instance
         """
         # Add constant for intercept
-        X_with_const = sm.add_constant(X)
+        X_with_const = sm.add_constant(X, has_constant="add")
 
         # Create logit model
         self._model = sm.Logit(y, X_with_const)
@@ -367,7 +367,7 @@ class StatsmodelsLogitModel(BaseModel):
             numpy array: Predicted class probabilities (shape: [n_samples, 2])
         """
         # Add constant to match training
-        X_with_const = sm.add_constant(X)
+        X_with_const = sm.add_constant(X, has_constant="add")
 
         # Get probabilities for positive class
         proba_positive = self._result.predict(X_with_const)

@@ -1,64 +1,79 @@
-# clef-project-template
+# finmmeval-task3-2026
 
-This is a template repository for CLEF projects. It is meant to be forked and used as a starting point for new projects.
+DeepFund-style trading workflow plus a competition-facing HTTP API for Task 3.
 
-## TODOS
+This repository has two main pieces:
+- `decision_making/` contains the existing trading workflow, data loading, models, and SQLite-backed state.
+- `api/` contains the FastAPI wrapper that receives organizer payloads and returns `BUY`, `HOLD`, or `SELL`.
 
-1. Fork this repository.
-2. Update the `my_task_package` directory with the name of your task package e.g. `birdclef` or `longeval`.
-3. Update the `pyproject.toml` file with the following elements:
-   1. `project:name` should be a hyphenated version of the task package
-   2. `project:authors` should be updated with the names of the team members
-   3. `project:urls` should be updated with the corresponding URLs for the project
-   4. `tools.setuptools.packages.find:include` should be updated with the directory name of the task package
-4. Update `user/my-username` and the corresponding `README.md` file with the username and a description of the user's directory.
+## Quickstart
 
-## quickstart
-
-Install the package into your environment.
-It is useful to install the package in editable mode so that you can make changes to the code and see the changes reflected in your environment.
-Use a virtual environment when possible to avoid conflicts with other packages.
+Install the project with `uv`:
 
 ```bash
-# create the virtual environment
-python -m venv .venv
-
-# activate the virtual environment
-source .venv/bin/activate
-
-# install the package in editable mode
-pip install -e .
+uv sync
 ```
 
-To run the package tests, use the `pytest` command.
+Before running the API or workflow, copy [.env.example](./.env.example) to `.env`
+and fill in `OPENAI_API_KEY` if you plan to use the OpenAI-backed workflow.
+
+Download the competition data first:
 
 ```bash
-pytest -v tests/
+uv run python run_download_data.py
 ```
 
-Add the pre-commit hooks to your repository to ensure that the code is formatted correctly and that the tests pass before committing.
+Run the workflow smoke test:
 
 ```bash
-pre-commit install
+uv run python decision_making/run_decision_making.py --config decision_making/config/debug_pm.yaml --trading-date 2026-03-19 --local-db
 ```
 
-## structure
+Run the API tests:
 
-The repository structure is as follows:
-
-```
-root/
-├── my_task_package/  # the task package for the project
-├── tests/            # tests for the project
-├── notebooks/        # notebooks for the project
-├── user/             # user-specific directories
-├── scripts/          # scripts for the project
-└── docs/             # documentation for the project
+```bash
+make api-test
+make api-integration-test
 ```
 
-The `my_task_package` directory should contain the main code for the project, organized into modules and submodules as needed.
-The `tests` directory should contain the tests for the project, organized into test modules that correspond to the code modules.
-The `notebooks` directory should contain Jupyter notebooks that capture exploration of the datasets and modeling.
-The `user` directory is a scratch directory where users can commit files without worrying about polluting the main repository.
-The `scripts` directory should contain scripts that are used in the project, such as utility scripts for working with PACE or GCP.
-The `docs` directory should contain documentation for the project, including explanations of the code, the data, and the models.
+Run a live server smoke test before deployment:
+
+```bash
+make api-smoke
+```
+
+Start the local API server:
+
+```bash
+make api-server
+```
+
+## API
+
+The competition endpoint lives in [docs/test_API.md](./docs/test_API.md).
+That guide explains the request flow, the separation of concerns, and how to run the server locally.
+
+The expected endpoint shape is:
+- `POST /competition_action/`
+- response: `{"recommended_action": "BUY"}` or `HOLD` / `SELL`
+
+## Repository Layout
+
+- `api/`: HTTP wrapper, bridge, and worker for the competition endpoint.
+- `decision_making/`: trading workflow, agents, models, DB helpers, and analysis code.
+- `tests/`: fast API tests plus an end-to-end workflow integration test.
+- `docs/`: API testing notes and project documentation.
+- `data/`: downloaded dataset files.
+- `notebooks/`: exploratory analysis.
+
+## Notes
+
+- The API accepts optional `news`, `10k`, and `10q` fields.
+- If `symbol` is missing, the API falls back to the key in `price`.
+- The server uses `PORT` when deployed to a host that provides one.
+- The SQLite database is created automatically the first time you run the workflow.
+- If the parquet files are missing, `run_download_data.py` can rebuild them from Hugging Face.
+- `docs/archive/README_ARCHIVE.md` preserves the original template README for reference.
+- `docs/archive/CLAUDE.md` preserves the old working-notes file for reference.
+- `pyproject.toml` is the single source of truth for dependencies.
+- `uv sync` creates the local environment, and `uv run ...` executes commands inside it.
