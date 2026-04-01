@@ -10,13 +10,17 @@ Usage:
     python scripts/train_return_model.py
 """
 
+from datetime import datetime
+import json
 from pathlib import Path
 
 import matplotlib
 import matplotlib.pyplot as plt
 
-from decision_making.feature_engineering import build_feature_matrix
+from decision_making.ml_model.feature_engineering import build_feature_matrix
+from decision_making.ml_model.model_persistence import save_model
 from decision_making.models import RandomForestReturnModel
+from decision_making.sp500_data import load_stock_sector
 from decision_making.validation import run_walk_forward_validation
 
 # Use non-interactive backend for plotting
@@ -31,11 +35,12 @@ CONFIG = {
     "test_months": 3,  # Test window size (months)
     "embargo_days": 21,  # Gap to prevent leakage (should equal max lag)
     "model_params": {
-        "n_estimators": 100,  # Number of trees
-        "max_depth": 10,  # Maximum tree depth
+        "n_estimators": 500,  # Number of trees (reduced for memory)
+        "max_depth": 5,  # Maximum tree depth
         "min_samples_split": 100,  # Min samples to split
         "min_samples_leaf": 50,  # Min samples in leaf
         "random_state": 42,  # Reproducibility
+        "n_jobs": 4,  # Limit parallelism to reduce memory (was -1)
     },
 }
 
@@ -94,6 +99,73 @@ def main():
     # Save feature importance
     importance_df.to_csv(output_dir / "feature_importance.csv", index=False)
     print(f"  - Saved feature importance to: {output_dir / 'feature_importance.csv'}")
+
+    # Save production model for inference
+    print("\nSaving production model...")
+    final_model = results.iloc[-1]["trained_model"]
+    model_path, metadata_path = save_model(
+        model=final_model,
+        metadata={
+            "training_date": datetime.now().isoformat(),
+            "feature_names": feature_cols,
+            "model_params": CONFIG["model_params"],
+            "validation_metrics": {
+                "accuracy": float(results["accuracy"].mean()),
+                "precision": float(results["precision"].mean()),
+                "recall": float(results["recall"].mean()),
+                "f1": float(results["f1"].mean()),
+                "auc": float(results["auc"].mean()),
+            },
+            "n_samples": len(df),
+        },
+        path=output_dir / "production_model.pkl",
+    )
+    print(f"  - Saved production model to: {model_path}")
+    print(f"  - Saved model metadata to: {metadata_path}")
+
+    # Save reference data for inference (SP500 distributions)
+    print("\nSaving reference data for inference...")
+
+    # Load sector mapping
+    try:
+        sector_df = load_stock_sector(min_obs=CONFIG["min_obs"])
+        sector_map = {}
+        for ticker in sector_df.columns:
+            sector_values = sector_df[ticker].dropna()
+            if len(sector_values) > 0:
+                sector_map[ticker] = sector_values.iloc[0]
+        sectors = list(set(sector_map.values()))
+    except Exception as e:
+        print(f"  - Warning: Could not load sector data: {e}")
+        sector_map = {}
+        sectors = []
+
+    # Build reference data dictionary
+    reference_data = {
+        "sectors": sectors,
+        "sector_map": sector_map,
+        "feature_distributions": {},
+    }
+
+    # Compute feature distributions for percentile ranking
+    for col in ["return_lag_1", "return_lag_5", "return_lag_21", "volatility_21d"]:
+        if col in df.columns:
+            reference_data["feature_distributions"][col] = {
+                "mean": float(df[col].mean()),
+                "std": float(df[col].std()),
+                "percentiles": {
+                    float(k): float(v) for k, v in df[col].quantile([0.01, 0.05, 0.25, 0.5, 0.75, 0.95, 0.99]).to_dict().items()
+                },
+            }
+
+    # Save reference data directly
+    reference_data_path = output_dir / "reference_data.json"
+    with Path.open(reference_data_path, "w") as f:
+        json.dump(reference_data, f, indent=2)
+    print(f"  - Saved reference data to: {reference_data_path}")
+    print(
+        f"  - Reference data includes {len(sectors)} sectors and {len(reference_data['feature_distributions'])} feature distributions"
+    )
 
     # Plot metrics over time
     print("\nGenerating plots...")
@@ -162,6 +234,9 @@ def main():
     print("  2. feature_importance.csv - Feature importance rankings")
     print("  3. metrics_over_time.png - Performance over validation folds")
     print("  4. feature_importance.png - Top features visualization")
+    print("  5. production_model.pkl - Trained model for inference")
+    print("  6. production_model_metadata.json - Model metadata")
+    print("  7. reference_data.json - SP500 reference distributions for cross-sectional features")
     print("=" * 80)
 
 

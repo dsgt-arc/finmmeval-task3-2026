@@ -21,6 +21,7 @@ class AgentRegistry:
         AgentKey.MACROECONOMIC,
         AgentKey.POLICY,
         AgentKey.DUMMY,
+        AgentKey.ML_MODEL,
     ]
 
     @classmethod
@@ -82,4 +83,10 @@ class AgentRegistry:
             key=AgentKey.DUMMY,
             agent_func=dummy_agent,
             agent_doc="Dummy analyst for debugging - returns neutral signal with no analysis.",
+        )
+
+        cls.register_agent(
+            key=AgentKey.ML_MODEL,
+            agent_func=ml_model_agent,
+            agent_doc="ML analyst using Random Forest trained on SP500 data for return direction prediction.",
         )

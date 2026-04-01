@@ -122,15 +122,8 @@ def get_trend_signal(prices_df, params):
 def get_mean_reversion_signal(prices_df, params):
     """Mean reversion strategy using statistical measures and Bollinger Bands"""
 
-    def _calculate_bollinger_bands(prices_df: pd.DataFrame, window: int) -> tuple[pd.Series, pd.Series]:
-        sma = prices_df["close"].rolling(window).mean()
-        std_dev = prices_df["close"].rolling(window).std()
-        upper_band = sma + (std_dev * 2)
-        lower_band = sma - (std_dev * 2)
-        return upper_band, lower_band
-
     # Calculate Bollinger Bands with configured window
-    bb_upper, bb_lower = _calculate_bollinger_bands(prices_df, params["bollinger_window"])
+    _, bb_upper, bb_lower = _calculate_bollinger(prices_df["close"], params["bollinger_window"])
 
     # Calculate z-score with configured rolling window
     ma = prices_df["close"].rolling(window=params["rolling_window"]).mean()
@@ -154,17 +147,7 @@ def get_mean_reversion_signal(prices_df, params):
 def get_rsi_signal(prices_df, params):
     """RSI signal that indicate overbought/oversold conditions"""
 
-    def _calculate_rsi(prices_df: pd.DataFrame, period: int) -> pd.Series:
-        delta = prices_df["close"].diff()
-        gain = (delta.where(delta > 0, 0)).fillna(0)
-        loss = (-delta.where(delta < 0, 0)).fillna(0)
-        avg_gain = gain.rolling(window=period).mean()
-        avg_loss = loss.rolling(window=period).mean()
-        rs = avg_gain / avg_loss
-        rsi = 100 - (100 / (1 + rs))
-        return rsi
-
-    rsi = _calculate_rsi(prices_df, params["period"])
+    rsi = _calculate_rsi(prices_df["close"], params["period"])
     if rsi.iloc[-1] > params["bearish"]:
         signal = Signal.BEARISH
     elif rsi.iloc[-1] < params["bullish"]:
@@ -272,3 +255,53 @@ def get_support_resistance(prices_df, params):
         result += f"- Price to support: {(current_price - support) / support}\n"
         result += f"- Price to resistance: {(resistance - current_price) / current_price}\n"
         return result
+
+
+def _calculate_rsi(prices: pd.Series, period: int = 14) -> pd.Series:
+    """Calculate Relative Strength Index.
+
+    Args:
+        prices: Price series
+        period: RSI period (default: 14)
+
+    Returns:
+        RSI series (values from 0 to 100)
+    """
+    delta = prices.diff()
+    gain = delta.where(delta > 0, 0).fillna(0)
+    loss = -delta.where(delta < 0, 0).fillna(0)
+
+    avg_gain = gain.rolling(window=period).mean()
+    avg_loss = loss.rolling(window=period).mean()
+
+    # Avoid division by zero
+    rs = avg_gain / (avg_loss + 1e-10)
+    rsi = 100 - (100 / (1 + rs))
+
+    return rsi
+
+
+def _calculate_bollinger(prices: pd.Series, window: int = 20) -> pd.Series:
+    """Calculate position within Bollinger Bands.
+
+    Args:
+        prices: Price series
+        window: Bollinger Band window (default: 20)
+
+    Returns:
+        Position series (0 = at lower band, 1 = at upper band, 0.5 = at middle)
+    """
+    sma = prices.rolling(window).mean()
+    std_dev = prices.rolling(window).std()
+
+    upper_band = sma + (std_dev * 2)
+    lower_band = sma - (std_dev * 2)
+
+    # Normalize position within bands (0 to 1)
+    band_width = upper_band - lower_band
+    position = (prices - lower_band) / (band_width + 1e-10)
+
+    # Clip to [0, 1] range (price can be outside bands)
+    position = position.clip(0, 1)
+
+    return position, upper_band, lower_band

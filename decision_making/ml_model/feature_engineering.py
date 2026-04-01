@@ -6,12 +6,11 @@ and cross-sectional features.
 """
 
 import math
-from typing import Optional
 
 import numpy as np
 import pandas as pd
 
-from .sp500_data import load_single_stocks, load_stock_metric_long, load_stock_sector
+from ..sp500_data import load_single_stocks, load_stock_metric_long, load_stock_sector
 
 
 def create_lagged_returns(prices_wide: pd.DataFrame, lags: list[int]) -> pd.DataFrame:
@@ -258,7 +257,7 @@ def add_cross_sectional_features(features_long: pd.DataFrame) -> pd.DataFrame:
 def build_feature_matrix(
     lags: list[int],
     min_obs: int = 400,
-    min_date: Optional[str] = "2001-01-01",
+    min_date: str | None = "2001-01-01",
 ) -> pd.DataFrame:
     """Build complete feature matrix for ML model.
 

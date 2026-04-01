@@ -10,6 +10,7 @@ class AgentKey:
     MACROECONOMIC = "macroeconomic"
     POLICY = "policy"
     DUMMY = "dummy"
+    ML_MODEL = "ml_model"
     # workflow keys
     PORTFOLIO = "portfolio_manager"
     PLANNER = "analyst_planner"
