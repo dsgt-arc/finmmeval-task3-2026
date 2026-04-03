@@ -179,3 +179,4 @@ data/
 
 # Sqlite
 *.db
+decision_making/database/

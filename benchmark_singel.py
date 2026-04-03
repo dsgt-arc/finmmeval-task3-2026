@@ -1,7 +1,7 @@
 import polars as pl
 from scipy.sparse import csr_matrix, hstack
 
-import decision_making.data as d
+import decision_making.ama_data as d
 from decision_making.logger import set_up_log
 from decision_making.models import (
     LogisticRegressionModel,
@@ -49,7 +49,7 @@ technical_features_sparse = csr_matrix(technical_features[["trend", "mean_revers
 
 
 # text features
-tsla = tsla.with_columns(d.text_len_col.meta.output_name())
+tsla = tsla.with_columns(d.text_col.list.len().alias(d.text_len_col.meta.output_name()))
 
 tsla = tsla.with_columns(d.text_col.list.join(". ").alias(d.text_str_col.meta.output_name()))
 texts = tsla.get_column(d.text_str_col.meta.output_name()).to_list()

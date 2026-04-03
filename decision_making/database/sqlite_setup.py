@@ -1,5 +1,6 @@
 import os
 import sqlite3
+from pathlib import Path
 
 from dotenv import load_dotenv
 
@@ -7,7 +8,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # Ensure database directory exists
-DB_PATH = os.getenv("DB_PATH")
+DB_PATH = os.getenv("DB_PATH", str(Path(__file__).resolve().parent / "deepfund.sqlite3"))
 os.makedirs(os.path.dirname(DB_PATH), exist_ok=True)
 
 

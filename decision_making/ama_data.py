@@ -1,12 +1,13 @@
 import datetime
+import os
 from pathlib import Path
 
-from huggingface_hub import hf_hub_download
 import polars as pl
+from huggingface_hub import hf_hub_download
 
 # HuggingFace dataset configuration
-HF_DATASET = "TheFinAI/daily_news"
-SPLITS = {
+HF_DATASET_AMA = "TheFinAI/daily_news"  # data of the Agents Market Arena (AMA) with more assets
+SPLITS_AMA = {
     # coins
     "BTC": "data_new/BTC-00000-of-00001.parquet",
     "ETH": "data_new/ETH-00000-of-00001.parquet",
@@ -17,17 +18,18 @@ SPLITS = {
     "MSFT": "data_new/MSFT-00000-of-00001.parquet",
 }
 
-SPLITS_OLD = {
+HF_DATASET_COMPETITION = "TheFinAI/CLEF_Task3_Trading"  # includes TSLA and BTC
+SPLITS_COMPETITION = {
     # coins
-    "BTC": "data_old/BTC-00000-of-00001.parquet",
+    "BTC": "data/BTC-00000-of-00001.parquet",
     # stocks
-    "TSLA": "data_old/TSLA-00000-of-00001.parquet",
+    "TSLA": "data/TSLA-00000-of-00001.parquet",
 }
 
 
 # Local data directory (at project root)
 DATA_DIR = Path(__file__).parent.parent / "data"
-DATA_DIR_OLD = Path(__file__).parent.parent / "data"
+DATA_DIR_COMPETITION = Path(__file__).parent.parent / "data"
 
 
 # Symbols for panel
@@ -55,16 +57,16 @@ def download_data(symbol: str, force_download: bool = False) -> Path:
     Returns:
         Path to the downloaded parquet file
     """
-    if symbol not in SPLITS:
-        raise ValueError(f"Unknown symbol: {symbol}. Available: {list(SPLITS.keys())}")
+    if symbol not in SPLITS_COMPETITION:
+        raise ValueError(f"Unknown symbol: {symbol}. Available: {list(SPLITS_COMPETITION.keys())}")
 
     # Create data directory if it doesn't exist
     DATA_DIR.mkdir(parents=True, exist_ok=True)
 
     # Download from HuggingFace
     local_file = hf_hub_download(
-        repo_id=HF_DATASET,
-        filename=SPLITS[symbol],
+        repo_id=HF_DATASET_COMPETITION,
+        filename=SPLITS_COMPETITION[symbol],
         repo_type="dataset",
         local_dir=DATA_DIR,
         force_download=force_download,
@@ -84,26 +86,29 @@ def download_all_data(force_download: bool = False) -> dict[str, Path]:
         Dictionary mapping symbols to their local file paths
     """
     downloaded = {}
-    for symbol in SPLITS:
+    for symbol in SPLITS_COMPETITION:
         print(f"Downloading {symbol}...")
         downloaded[symbol] = download_data(symbol, force_download=force_download)
     return downloaded
 
 
-def load_data(symbol: str, download_if_missing: bool = True, old_data: bool = True) -> pl.DataFrame:
+def load_data(symbol: str, download_if_missing: bool = True, competition_data: bool = True) -> pl.DataFrame:
     """
     Load data for a specific symbol.
 
     Args:
         symbol: The trading symbol (e.g., 'BTC', 'TSLA')
         download_if_missing: If True, download data if not found locally
-        old_data: If True, load from old data directory (has more history)
+        competition_data: If True, load from old data directory (has more history)
     Returns:
         Polars DataFrame with the trading data
     """
-    if symbol not in SPLITS:
-        raise ValueError(f"Unknown symbol: {symbol}. Available: {list(SPLITS.keys())}")
-    local_path = DATA_DIR_OLD / SPLITS_OLD[symbol] if old_data else DATA_DIR / SPLITS[symbol]
+    if symbol not in SPLITS_AMA:
+        raise ValueError(f"Unknown symbol: {symbol}. Available: {list(SPLITS_AMA.keys())}")
+    if competition_data:
+        local_path = DATA_DIR / "data" / Path(SPLITS_COMPETITION[symbol]).name
+    else:
+        local_path = DATA_DIR / "data_new" / Path(SPLITS_AMA[symbol]).name
 
     # Download if file doesn't exist and download_if_missing is True
     if not local_path.exists() and download_if_missing:
@@ -116,7 +121,7 @@ def load_data(symbol: str, download_if_missing: bool = True, old_data: bool = Tr
 
 
 def load_specific_data(
-    symbol: str, date: str, type: str, download_if_missing: bool = True, old_data: bool = True
+    symbol: str, date: str, type: str, download_if_missing: bool = True, competition_data: bool = True
 ) -> pl.DataFrame:
     """Load data for a specific symbol, date, and type.
     Args:
@@ -124,14 +129,17 @@ def load_specific_data(
     date: The date to filter by (format 'YYYY-MM-DD')
     type: The type to filter by (e.g., 'news', 'social_media')
     download_if_missing: If True, download data if not found locally
-    old_data: If True, load from old data directory (has more history)
+    competition_data: If True, load from old data directory (has more history)
     Returns:
     str | pl.DataFrame: Either a string (for news) or a DataFrame (for price)
     """
 
-    symbol_data = load_data(symbol, download_if_missing=download_if_missing, old_data=old_data)
-    # cast date column to datetime
+    symbol_data = load_data(symbol, download_if_missing=download_if_missing, competition_data=competition_data)
+    # cast date column to datetime/date for reliable comparisons
     symbol_data = symbol_data.with_columns(date_col.cast(datetime.date))
+
+    if isinstance(date, str):
+        date = datetime.date.fromisoformat(date)
     if type == "news":
         # news is focusing just on the news of day t-1
         date_data = symbol_data.filter(date_col == date)

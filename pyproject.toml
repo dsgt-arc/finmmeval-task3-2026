@@ -1,22 +1,50 @@
 [project]
-name = "my-task-project"
+name = "finmmeval-task3-2026"
 version = "0.1.1"
 authors = [{ name = "Anthony Miyaguchi", email = "acmiyaguchi@gatech.edu" }]
-description = "DS@GT CLEF project template"
+description = "DeepFund-style trading workflow plus a competition-facing HTTP API"
 readme = "README.md"
-requires-python = ">=3.8"
-dynamic = ["dependencies"]
+requires-python = ">=3.11"
+dependencies = [
+    "numpy",
+    "pandas",
+    "matplotlib",
+    "scikit-learn",
+    "pyyaml",
+    "python-dotenv",
+    "statsmodels",
+    "gensim",
+    "tqdm",
+    "pyspark>=3.4.0",
+    "pyarrow",
+    "polars",
+    "huggingface_hub",
+    "torch",
+    "tiktoken",
+    "jupyterlab",
+    "ruff",
+    "pre-commit",
+    "pytest",
+    "pydantic",
+    "fastapi",
+    "uvicorn",
+    "supabase",
+    "langgraph",
+    "typing-extensions",
+    "langchain-openai",
+    "langchain-anthropic",
+    "langchain-deepseek",
+    "langchain-ollama",
+    "langchain-fireworks",
+]
 
 [project.urls]
-Homepage = "https://github.com/dsgt-kaggle-clef/clef-project-template"
-Issues = "https://github.com/dsgt-kaggle-clef/clef-project-template/issues"
+Homepage = "https://github.com/dsgt-arc/finmmeval-task3-2026"
+Issues = "https://github.com/dsgt-arc/finmmeval-task3-2026/issues"
 
 [build-system]
 requires = ["setuptools>=61.0"]
 build-backend = "setuptools.build_meta"
-
-[tool.setuptools.dynamic]
-dependencies = { file = "requirements.txt" }
 
 [tool.setuptools.packages.find]
 where = ["."]
@@ -31,8 +59,8 @@ preview = true
 line-length = 130
 indent-width = 4
 
-# Target Python 3.8+
-target-version = "py38"
+# Target Python 3.11+
+target-version = "py311"
 
 # Exclude common directories
 exclude = [
@@ -87,7 +115,6 @@ ignore = [
     "E501",   # Line too long (handled by formatter)
     "B008",   # Do not perform function calls in argument defaults
     "B905",   # `zip()` without an explicit `strict=` parameter
-    "UP007",  # Use `X | Y` for type annotations (not compatible with Python 3.8)
 ]
 
 # Allow fix for all enabled rules (when `--fix`) is provided.
@@ -126,3 +153,9 @@ docstring-code-line-length = "dynamic"
 [tool.ruff.lint.isort]
 known-first-party = ["decision_making"]
 force-sort-within-sections = true
+
+[tool.pytest.ini_options]
+markers = [
+    "integration: end-to-end tests that run the real API bridge and workflow",
+    "slow: tests that take longer and may hit external services",
+]
