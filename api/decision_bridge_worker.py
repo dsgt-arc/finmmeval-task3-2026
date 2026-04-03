@@ -9,11 +9,11 @@ Separation of concerns:
 
 from __future__ import annotations
 
+from datetime import datetime
 import json
 import os
-import sys
-from datetime import datetime
 from pathlib import Path
+import sys
 
 import yaml
 
@@ -23,9 +23,10 @@ for path in (str(DECISION_MAKING_DIR), str(REPO_ROOT)):
     if path not in sys.path:
         sys.path.insert(0, path)
 
-from decision_making.run_decision_making import load_portfolio_config  # noqa: E402
 from graph.workflow import AgentWorkflow  # noqa: E402
 from util.db_helper import db_initialize, get_db  # noqa: E402
+
+from decision_making.run_decision_making import load_portfolio_config  # noqa: E402
 
 
 def _load_payload(path: Path) -> dict:
@@ -46,6 +47,8 @@ def _build_config(payload: dict) -> dict:
     cfg["tickers"] = payload.get("symbol") or []
     cfg["trading_date"] = datetime.strptime(payload["date"], "%Y-%m-%d")
     cfg["planner_mode"] = cfg.get("planner_mode", False)
+    # Pass the full payload so the news pipeline can extract news/10k/10q
+    cfg["api_payload"] = payload
     return cfg
 
 

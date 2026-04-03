@@ -1,4 +1,4 @@
-from enum import Enum
+from enum import StrEnum
 
 
 class AgentKey:
@@ -7,6 +7,7 @@ class AgentKey:
     FUNDAMENTAL = "fundamental"
     INSIDER = "insider"
     COMPANY_NEWS = "company_news"
+    SECTION_NEWS = "section_news"
     MACROECONOMIC = "macroeconomic"
     POLICY = "policy"
     DUMMY = "dummy"
@@ -15,23 +16,29 @@ class AgentKey:
     PLANNER = "analyst_planner"
 
 
-class Signal(str, Enum):
+class Signal(StrEnum):
     """Signal type"""
 
     BULLISH = "Bullish"
     BEARISH = "Bearish"
     NEUTRAL = "Neutral"
 
-    def __str__(self) -> str:
-        return self.value
 
-
-class Action(str, Enum):
+class Action(StrEnum):
     """Action type"""
 
     BUY = "Buy"
     SELL = "Sell"
     HOLD = "Hold"
 
-    def __str__(self) -> str:
-        return self.value
+
+class NewsSection(StrEnum):
+    """Fixed news section categories for classification."""
+
+    COMPANY_FUNDAMENTALS = "company_fundamentals"
+    PRODUCT_DEMAND = "product_demand"
+    REGULATORY_POLICY = "regulatory_policy"
+    MACRO_RATES = "macro_rates"
+    INDUSTRY_COMPETITION = "industry_competition"
+    FILINGS_10K_10Q = "filings_10k_10q"
+    OTHER = "other"

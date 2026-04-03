@@ -124,6 +124,50 @@ You must provide your decision as a structured output with the following fields:
 - justification: brief explanation of your selection
 """
 
+# ---------------------------------------------------------------------------
+# Section news prompts
+# ---------------------------------------------------------------------------
+
+NEWS_CLASSIFY_PROMPT = """
+You are a financial news classifier. For each numbered news item below, assign exactly ONE section label.
+
+Valid section labels: {valid_sections}
+
+News items:
+{news_items}
+
+Return a list of exactly {count} section labels, one per item, in order.
+"""
+
+SECTION_SCORE_PROMPT = """
+You are a financial analyst specialising in the "{section}" category.
+
+Analyse the following news items and determine their trading signal for the relevant ticker.
+
+News items:
+{news_text}
+
+You must provide your analysis as a structured output with the following fields:
+- section: "{section}"
+- direction: One of ["Bullish", "Bearish", "Neutral"]
+- confidence: A float between 0.0 and 1.0 indicating your confidence
+- horizon: One of ["short", "medium", "long"] indicating the investment horizon this news is most relevant to
+- rationale: A brief explanation of your analysis
+"""
+
+SECTION_NEWS_AGGREGATE_PROMPT = """
+You are a senior news analyst producing a single consolidated trading signal from multiple section-level analyses.
+
+Section breakdown:
+{section_breakdown}
+
+Weigh each section by its confidence and relevance. Produce one overall signal.
+
+You must provide your analysis as a structured output with the following fields:
+- signal: One of ["Bullish", "Bearish", "Neutral"]
+- justification: A brief explanation summarising the section signals and your reasoning
+"""
+
 RISK_CONTROL_PROMPT = """
 You are a professional risk control analyst.
 Please evaluate the risk of the ticker and set the optimal position ratio based on analyst signals and portfolio state.
@@ -135,8 +179,8 @@ Here is the portfolio state:
 {portfolio}
 
 The position ratio range:  [0, {max_position_ratio}], the minimum step is 0.05.
-If you obeserve more bullish signals, you can set a larger position ratio.
-If you obeserve more bearish signals, you can set a smaller position ratio.
+If you observe more bullish signals, you can set a larger position ratio.
+If you observe more bearish signals, you can set a smaller position ratio.
 
 You must provide your control recommendation as a structured output with the following fields:
 - optimal_position_ratio: The optimal ratio of the position value to the total portfolio value

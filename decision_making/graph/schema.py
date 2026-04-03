@@ -1,10 +1,10 @@
 from datetime import datetime
 import operator
-from typing import Any, Dict, List
+from typing import Annotated, Any
 
 from graph.constants import Action, Signal
 from pydantic import BaseModel, Field
-from typing_extensions import Annotated, TypedDict
+from typing_extensions import TypedDict
 
 
 class AnalystSignal(BaseModel):
@@ -14,6 +14,24 @@ class AnalystSignal(BaseModel):
         description=f"Choose from {Signal.BULLISH}, {Signal.BEARISH}, or {Signal.NEUTRAL}", default=Signal.NEUTRAL
     )
     justification: str = Field(description="Brief explanation for the signal", default="No justification provided due to error")
+
+
+class NewsItem(BaseModel):
+    """A single piece of news or filing text with its source metadata."""
+
+    text: str = Field(description="Raw news/filing content")
+    source: str = Field(description="Origin of the item: 'api_news', 'api_10k', 'api_10q', 'ama'", default="ama")
+    date: str | None = Field(description="ISO date string for the item", default=None)
+
+
+class SectionSignal(BaseModel):
+    """Signal produced by analysing one news section."""
+
+    section: str = Field(description="News section identifier")
+    direction: Signal = Field(default=Signal.NEUTRAL, description="Bullish / Bearish / Neutral")
+    confidence: float = Field(default=0.5, ge=0.0, le=1.0, description="Model confidence in [0, 1]")
+    horizon: str = Field(default="short", description="Investment horizon: short / medium / long")
+    rationale: str = Field(default="No rationale provided", description="Brief explanation")
 
 
 class Decision(BaseModel):
@@ -59,12 +77,17 @@ class FundState(TypedDict):
     exp_name: str = Field(description="Experiment name.")
     trading_date: datetime = Field(description="Trading date.")
     ticker: str = Field(description="Ticker in-the-flow.")
-    llm_config: Dict[str, Any] = Field(description="LLM configuration.")
+    llm_config: dict[str, Any] = Field(description="LLM configuration.")
     portfolio: Portfolio = Field(description="Portfolio for the fund.")
     num_tickers: int = Field(description="Number of tickers in the fund.")
 
+    # news items ingested from API payload or AMA fallback
+    news_items: list[NewsItem]
+
     # updated by workflow
     # ticker -> signal of all analysts
-    analyst_signals: Annotated[List[AnalystSignal], operator.add]
+    analyst_signals: Annotated[list[AnalystSignal], operator.add]
+    # section-level breakdown produced by section_news analyst
+    section_signals: Annotated[list[SectionSignal], operator.add]
     # portfolio manager output
     decision: Decision

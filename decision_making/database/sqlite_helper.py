@@ -1,7 +1,6 @@
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 import json
 import sqlite3
-from typing import Dict, List, Optional
 import uuid
 
 from decision_making.database.interface import BaseDB
@@ -20,7 +19,7 @@ class SQLiteDB(BaseDB):
         conn.row_factory = sqlite3.Row  # access columns by name
         return conn
 
-    def get_config(self, config_id: str) -> Optional[Dict]:
+    def get_config(self, config_id: str) -> dict | None:
         """Get config by id."""
         conn = None
         try:
@@ -40,7 +39,7 @@ class SQLiteDB(BaseDB):
             if conn:
                 conn.close()
 
-    def get_config_id_by_name(self, exp_name: str) -> Optional[str]:
+    def get_config_id_by_name(self, exp_name: str) -> str | None:
         """Get config id by experiment name."""
         conn = None
         try:
@@ -60,7 +59,7 @@ class SQLiteDB(BaseDB):
             if conn:
                 conn.close()
 
-    def create_config(self, config: Dict) -> Optional[str]:
+    def create_config(self, config: dict) -> str | None:
         """Create a new config entry."""
         conn = None
         try:
@@ -76,7 +75,7 @@ class SQLiteDB(BaseDB):
                 (
                     config_id,
                     config["exp_name"],
-                    datetime.now(timezone.utc).isoformat(),  # UTC time
+                    datetime.now(UTC).isoformat(),  # UTC time
                     json.dumps(config["tickers"]),
                     config["planner_mode"],
                     config["llm"]["model"],
@@ -93,7 +92,7 @@ class SQLiteDB(BaseDB):
             if conn:
                 conn.close()
 
-    def get_latest_trading_date(self, config_id: str) -> Optional[datetime]:
+    def get_latest_trading_date(self, config_id: str) -> datetime | None:
         """Get the latest trading date for a config."""
         conn = None
         try:
@@ -122,7 +121,7 @@ class SQLiteDB(BaseDB):
             if conn:
                 conn.close()
 
-    def get_latest_portfolio(self, config_id: str) -> Optional[Dict]:
+    def get_latest_portfolio(self, config_id: str) -> dict | None:
         """Get the latest portfolio for a config."""
         conn = None
         try:
@@ -151,7 +150,7 @@ class SQLiteDB(BaseDB):
             if conn:
                 conn.close()
 
-    def create_portfolio(self, config_id: str, cashflow: float, trading_date: datetime) -> Optional[Dict]:
+    def create_portfolio(self, config_id: str, cashflow: float, trading_date: datetime) -> dict | None:
         """Create a new portfolio."""
         conn = None
         try:
@@ -167,7 +166,7 @@ class SQLiteDB(BaseDB):
                 (
                     portfolio_id,
                     config_id,
-                    datetime.now(timezone.utc).isoformat(),  # UTC time
+                    datetime.now(UTC).isoformat(),  # UTC time
                     trading_date.isoformat(),
                     cashflow,
                     cashflow,
@@ -184,7 +183,7 @@ class SQLiteDB(BaseDB):
             if conn:
                 conn.close()
 
-    def copy_portfolio(self, config_id: str, portfolio: Dict, trading_date: datetime) -> Optional[Dict]:
+    def copy_portfolio(self, config_id: str, portfolio: dict, trading_date: datetime) -> dict | None:
         """Copy a portfolio."""
         conn = None
         try:
@@ -201,7 +200,7 @@ class SQLiteDB(BaseDB):
                 (
                     portfolio_id,
                     config_id,
-                    datetime.now(timezone.utc).isoformat(),  # UTC time
+                    datetime.now(UTC).isoformat(),  # UTC time
                     trading_date.isoformat(),
                     portfolio["cashflow"],
                     total_assets,
@@ -218,7 +217,7 @@ class SQLiteDB(BaseDB):
             if conn:
                 conn.close()
 
-    def update_portfolio(self, config_id: str, portfolio: Dict, trading_date: datetime) -> bool:
+    def update_portfolio(self, config_id: str, portfolio: dict, trading_date: datetime) -> bool:
         """update portfolio."""
         conn = None
         try:
@@ -234,7 +233,7 @@ class SQLiteDB(BaseDB):
             """,
                 (
                     config_id,
-                    datetime.now(timezone.utc).isoformat(),  # UTC time
+                    datetime.now(UTC).isoformat(),  # UTC time
                     trading_date.isoformat(),
                     portfolio["cashflow"],
                     total_assets,
@@ -254,7 +253,7 @@ class SQLiteDB(BaseDB):
 
     def save_decision(
         self, portfolio_id: str, ticker: str, prompt: str, decision: Decision, trading_date: datetime
-    ) -> Optional[str]:
+    ) -> str | None:
         """Save a new decision."""
         conn = None
         try:
@@ -271,7 +270,7 @@ class SQLiteDB(BaseDB):
                 (
                     decision_id,
                     portfolio_id,
-                    datetime.now(timezone.utc).isoformat(),  # UTC time
+                    datetime.now(UTC).isoformat(),  # UTC time
                     trading_date.isoformat(),
                     ticker,
                     prompt,
@@ -291,7 +290,7 @@ class SQLiteDB(BaseDB):
             if conn:
                 conn.close()
 
-    def save_signal(self, portfolio_id: str, analyst: str, ticker: str, prompt: str, signal: AnalystSignal) -> Optional[str]:
+    def save_signal(self, portfolio_id: str, analyst: str, ticker: str, prompt: str, signal: AnalystSignal) -> str | None:
         """Save a new signal."""
         conn = None
         try:
@@ -308,7 +307,7 @@ class SQLiteDB(BaseDB):
                 (
                     signal_id,
                     portfolio_id,
-                    datetime.now(timezone.utc).isoformat(),  # UTC time
+                    datetime.now(UTC).isoformat(),  # UTC time
                     ticker,
                     prompt,
                     analyst,
@@ -326,7 +325,7 @@ class SQLiteDB(BaseDB):
             if conn:
                 conn.close()
 
-    def get_recent_portfolio_ids_by_config_id(self, config_id: str, limit: int) -> List[str]:
+    def get_recent_portfolio_ids_by_config_id(self, config_id: str, limit: int) -> list[str]:
         """Get recent portfolio ids by config id."""
         conn = None
         try:
@@ -351,7 +350,7 @@ class SQLiteDB(BaseDB):
             if conn:
                 conn.close()
 
-    def get_decision_memory(self, exp_name: str, ticker: str, limit: int) -> List[Dict]:
+    def get_decision_memory(self, exp_name: str, ticker: str, limit: int) -> list[dict]:
         """Get recent decisions for a ticker."""
 
         # Step 1: Get config id by exp_name
@@ -381,7 +380,7 @@ class SQLiteDB(BaseDB):
             """
 
             # Combine portfolio_ids and ticker into parameters
-            params = portfolio_ids + [ticker]
+            params = [*portfolio_ids, ticker]
             cursor.execute(query, params)
 
             decisions = []
@@ -397,6 +396,42 @@ class SQLiteDB(BaseDB):
         except Exception as e:
             logger.warning(f"No decision memory found for {ticker} in {exp_name}: {e}")
             return []
+        finally:
+            if conn:
+                conn.close()
+
+    def save_section_signal(self, portfolio_id: str, ticker: str, signal) -> str | None:
+        """Save a section-level news signal."""
+        conn = None
+        try:
+            conn = self._get_connection()
+            cursor = conn.cursor()
+
+            signal_id = str(uuid.uuid4())
+            cursor.execute(
+                """
+                INSERT INTO section_signal (id, portfolio_id, updated_at, ticker,
+                                           section, direction, confidence, horizon, rationale)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+                (
+                    signal_id,
+                    portfolio_id,
+                    datetime.now(UTC).isoformat(),
+                    ticker,
+                    signal.section,
+                    str(signal.direction),
+                    signal.confidence,
+                    signal.horizon,
+                    signal.rationale,
+                ),
+            )
+
+            conn.commit()
+            return signal_id
+        except Exception as e:
+            logger.error(f"Error saving section signal: {e}")
+            return None
         finally:
             if conn:
                 conn.close()

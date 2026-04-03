@@ -1,11 +1,12 @@
 from time import perf_counter
-from typing import Any, Dict
+from typing import Any
 
 from agents.planner import planner_agent
 from agents.registry import AgentRegistry
 from graph.constants import AgentKey
 from graph.schema import Action, Decision, FundState, Portfolio, Position
 from langgraph.graph import END, START, StateGraph
+from news_pipeline import ingest_news
 from util.db_helper import get_db
 from util.logger import logger
 
@@ -13,7 +14,7 @@ from util.logger import logger
 class AgentWorkflow:
     """Trading Decision Workflow."""
 
-    def __init__(self, config: Dict[str, Any], config_id: str):
+    def __init__(self, config: dict[str, Any], config_id: str):
         self.llm_config = config["llm"]
         self.tickers = config["tickers"]
         self.exp_name = config["exp_name"]
@@ -35,6 +36,7 @@ class AgentWorkflow:
         # Initialize workflow configuration
         self.planner_mode = config.get("planner_mode", False)
         self.sequential_mode = config.get("sequential_mode", False)
+        self.api_payload = config.get("api_payload")
 
         # Verify workflow analysts
         if not config.get("workflow_analysts"):
@@ -107,6 +109,9 @@ class AgentWorkflow:
         for ticker in self.tickers:
             self.load_analysts(ticker)
 
+            # Ingest news for this ticker (API payload primary, AMA fallback)
+            news_items = ingest_news(ticker, self.trading_date, self.api_payload)
+
             # init FundState
             state = FundState(
                 ticker=ticker,
@@ -115,6 +120,7 @@ class AgentWorkflow:
                 llm_config=self.llm_config,
                 portfolio=portfolio,
                 num_tickers=len(self.tickers),
+                news_items=news_items,
             )
 
             # build the workflow
@@ -124,7 +130,7 @@ class AgentWorkflow:
                 final_state = workflow.invoke(state)
             except Exception as e:
                 logger.error(f"Error running deep fund: {e}")
-                raise RuntimeError(f"Failed to generate new portfolio {portfolio.id}")
+                raise RuntimeError(f"Failed to generate new portfolio {portfolio.id}") from e
 
             # update portfolio
             portfolio = self.update_portfolio_ticker(portfolio, ticker, final_state["decision"])

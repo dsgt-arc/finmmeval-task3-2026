@@ -180,3 +180,17 @@ data/
 # Sqlite
 *.db
 decision_making/database/
+
+# Claude
+.claude
+
+# Backtest Results
+results/
+
+# Node / prettier
+node_modules/
+package-lock.json
+
+# Benchmark output files
+benchmark_*.json
+benchmark_*.csv

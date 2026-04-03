@@ -1,6 +1,6 @@
 import os
-import sqlite3
 from pathlib import Path
+import sqlite3
 
 from dotenv import load_dotenv
 
@@ -9,7 +9,7 @@ load_dotenv()
 
 # Ensure database directory exists
 DB_PATH = os.getenv("DB_PATH", str(Path(__file__).resolve().parent / "deepfund.sqlite3"))
-os.makedirs(os.path.dirname(DB_PATH), exist_ok=True)
+Path(DB_PATH).parent.mkdir(parents=True, exist_ok=True)
 
 
 def init_database():
@@ -76,6 +76,22 @@ def init_database():
     )
     """)
 
+    # Create section_signal table for per-section news analysis
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS section_signal (
+        id VARCHAR(36) PRIMARY KEY,
+        portfolio_id VARCHAR(36) NOT NULL,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        ticker VARCHAR(10) NOT NULL,
+        section VARCHAR(50) NOT NULL,
+        direction VARCHAR(10) NOT NULL,
+        confidence DECIMAL(5,4) NOT NULL,
+        horizon VARCHAR(10) NOT NULL,
+        rationale TEXT NOT NULL,
+        FOREIGN KEY (portfolio_id) REFERENCES portfolio(id)
+    )
+    """)
+
     # Create indices for better query performance
     cursor.execute("CREATE INDEX IF NOT EXISTS idx_config_exp_name ON config(exp_name)")
     cursor.execute("CREATE INDEX IF NOT EXISTS idx_portfolio_updated ON portfolio(updated_at)")
@@ -86,6 +102,9 @@ def init_database():
     cursor.execute("CREATE INDEX IF NOT EXISTS idx_signal_portfolio ON signal(portfolio_id)")
     cursor.execute("CREATE INDEX IF NOT EXISTS idx_signal_updated ON signal(updated_at)")
     cursor.execute("CREATE INDEX IF NOT EXISTS idx_signal_analyst ON signal(analyst)")
+    cursor.execute("CREATE INDEX IF NOT EXISTS idx_section_signal_portfolio ON section_signal(portfolio_id)")
+    cursor.execute("CREATE INDEX IF NOT EXISTS idx_section_signal_ticker ON section_signal(ticker)")
+    cursor.execute("CREATE INDEX IF NOT EXISTS idx_section_signal_section ON section_signal(section)")
 
     conn.commit()
     conn.close()
