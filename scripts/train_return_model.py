@@ -24,15 +24,15 @@ matplotlib.use("Agg")
 
 # Configuration
 CONFIG = {
-    "min_obs": 400,  # Minimum observations per stock
+    "min_obs": 200,  # Minimum observations per stock
     "lags": [1, 5, 21],  # 1-day, 1-week, 1-month lags
-    "initial_train_years": 7,  # Initial training period (years)
+    "initial_train_years": 12,  # Initial training period (years)
     "step_months": 6,  # Retrain frequency (months)
     "test_months": 3,  # Test window size (months)
     "embargo_days": 21,  # Gap to prevent leakage (should equal max lag)
     "model_params": {
         "n_estimators": 100,  # Number of trees
-        "max_depth": 10,  # Maximum tree depth
+        "max_depth": 8,  # Maximum tree depth
         "min_samples_split": 100,  # Min samples to split
         "min_samples_leaf": 50,  # Min samples in leaf
         "random_state": 42,  # Reproducibility

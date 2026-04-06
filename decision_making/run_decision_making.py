@@ -1,18 +1,18 @@
 import argparse
-from typing import Any, Dict
+from typing import Any
 
 from dotenv import load_dotenv
 
 # Load environment variables from .env file
 load_dotenv()
 
-from graph.workflow import AgentWorkflow
-from util.config import ConfigParser
-from util.db_helper import db_initialize, get_db
-from util.logger import logger
+from graph.workflow import AgentWorkflow  # noqa: E402
+from util.config import ConfigParser  # noqa: E402
+from util.db_helper import db_initialize, get_db  # noqa: E402
+from util.logger import logger  # noqa: E402
 
 
-def load_portfolio_config(cfg: Dict[str, Any], db):
+def load_portfolio_config(cfg: dict[str, Any], db):
     """Load and validate config based on experiment configuration."""
     config_id = db.get_config_id_by_name(cfg["exp_name"])
     if not config_id:

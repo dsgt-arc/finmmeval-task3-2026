@@ -1,4 +1,4 @@
-from typing import Callable, Dict, List
+from collections.abc import Callable
 
 from agents.analysts import *
 from agents.portfolio_manager import portfolio_agent
@@ -9,8 +9,8 @@ class AgentRegistry:
     """Registry for all agents."""
 
     # Initialize as actual dictionaries, not just type annotations
-    agent_func_mapping: Dict[str, Callable] = {}
-    agent_doc_mapping: Dict[str, str] = {}
+    agent_func_mapping: dict[str, Callable] = {}
+    agent_doc_mapping: dict[str, str] = {}
 
     # Analyst KEYs
     ANALYST_KEYS = [
@@ -21,6 +21,7 @@ class AgentRegistry:
         AgentKey.MACROECONOMIC,
         AgentKey.POLICY,
         AgentKey.DUMMY,
+        AgentKey.COMPANY_NEWS_ENHANCED,
     ]
 
     @classmethod
@@ -29,7 +30,7 @@ class AgentRegistry:
         return cls.agent_func_mapping.get(key)
 
     @classmethod
-    def get_all_analyst_keys(cls) -> List[str]:
+    def get_all_analyst_keys(cls) -> list[str]:
         """Get all analyst keys."""
         return cls.ANALYST_KEYS
 
@@ -82,4 +83,10 @@ class AgentRegistry:
             key=AgentKey.DUMMY,
             agent_func=dummy_agent,
             agent_doc="Dummy analyst for debugging - returns neutral signal with no analysis.",
+        )
+
+        cls.register_agent(
+            key=AgentKey.COMPANY_NEWS_ENHANCED,
+            agent_func=company_news_enhanced_agent,
+            agent_doc="Enhanced company news analyst with per-article analysis and trend tracking.",
         )
