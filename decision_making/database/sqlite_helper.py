@@ -400,42 +400,6 @@ class SQLiteDB(BaseDB):
             if conn:
                 conn.close()
 
-    def save_section_signal(self, portfolio_id: str, ticker: str, signal) -> str | None:
-        """Save a section-level news signal."""
-        conn = None
-        try:
-            conn = self._get_connection()
-            cursor = conn.cursor()
-
-            signal_id = str(uuid.uuid4())
-            cursor.execute(
-                """
-                INSERT INTO section_signal (id, portfolio_id, updated_at, ticker,
-                                           section, direction, confidence, horizon, rationale)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-            """,
-                (
-                    signal_id,
-                    portfolio_id,
-                    datetime.now(UTC).isoformat(),
-                    ticker,
-                    signal.section,
-                    str(signal.direction),
-                    signal.confidence,
-                    signal.horizon,
-                    signal.rationale,
-                ),
-            )
-
-            conn.commit()
-            return signal_id
-        except Exception as e:
-            logger.error(f"Error saving section signal: {e}")
-            return None
-        finally:
-            if conn:
-                conn.close()
-
 
 # init global instance
 # sqlite_db = SQLiteDB()

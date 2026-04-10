@@ -91,9 +91,20 @@ def section_news_agent(state: FundState):
     logger.log_signal(agent_name, ticker, fused_signal)
     db.save_signal(portfolio_id, agent_name, ticker, "section_news_fused", fused_signal)
 
-    # Save section-level signals if the DB supports it
+    # Save per-section signals into the shared signal table.
+    # analyst is namespaced as "section_news:<section>" to distinguish from the
+    # fused signal (analyst="section_news_fused") and other analysts.
     for ss in section_signals:
-        _save_section_signal(db, portfolio_id, ticker, ss)
+        db.save_signal(
+            portfolio_id,
+            f"section_news:{ss.section}",
+            ticker,
+            "",
+            AnalystSignal(
+                signal=ss.direction,
+                justification=f"[conf={ss.confidence:.2f}, horizon={ss.horizon}] {ss.rationale}",
+            ),
+        )
 
     return {"analyst_signals": [fused_signal], "section_signals": section_signals}
 
@@ -147,14 +158,3 @@ def _fuse_section_signals(
     # Override direction with the numeric fusion to keep consistency
     agg_signal.signal = fused_direction
     return agg_signal
-
-
-def _save_section_signal(db, portfolio_id: str, ticker: str, sig: SectionSignal):
-    """Persist a section-level signal using the extended signal table."""
-    try:
-        db.save_section_signal(portfolio_id, ticker, sig)
-    except AttributeError:
-        # DB implementation doesn't support section signals yet — silently skip
-        pass
-    except Exception as e:
-        logger.warning(f"Failed to persist section signal: {e}")
