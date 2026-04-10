@@ -2,8 +2,8 @@
 
 Replaces the monolithic ``company_news_agent`` with a multi-section pipeline:
 
-1. Reads ``news_items`` that were ingested earlier (by the workflow) from the
-   API payload or AMA fallback.
+1. Fetches its own news/filing items via ``news_pipeline.ingest_news`` using
+   the API payload (or AMA fallback) stored in ``FundState``.
 2. Classifies each item into a ``NewsSection`` (rules first, LLM fallback).
 3. Scores each non-empty section via a dedicated LLM prompt, producing an
    ``AnalystSignal`` with the extra ``section``, ``confidence``, and
@@ -28,6 +28,7 @@ from llm.cost_estimation import estimate_cost
 from llm.inference import agent_call
 from llm.prompt import SECTION_NEWS_AGGREGATE_PROMPT, SECTION_SCORE_PROMPT
 from news_classifier import classify_items
+from news_pipeline import ingest_news
 from pydantic import BaseModel, Field
 from util.db_helper import get_db
 from util.logger import logger
@@ -67,11 +68,12 @@ def section_news_agent(state: FundState):
     ticker = state["ticker"]
     llm_config = state["llm_config"]
     portfolio_id = state["portfolio"].id
-    news_items: list[NewsItem] = state.get("news_items") or []
 
     db = get_db()
 
     logger.log_agent_status(agent_name, ticker, "Classifying news into sections")
+
+    news_items: list[NewsItem] = ingest_news(ticker, state["trading_date"], state.get("api_payload"))
 
     if not news_items:
         logger.warning(f"[{agent_name}] No news items for {ticker}, returning neutral")

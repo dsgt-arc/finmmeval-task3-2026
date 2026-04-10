@@ -70,8 +70,8 @@ class FundState(TypedDict):
     portfolio: Portfolio = Field(description="Portfolio for the fund.")
     num_tickers: int = Field(description="Number of tickers in the fund.")
 
-    # news items ingested from API payload or AMA fallback (NewsItem dataclass from news_pipeline)
-    news_items: list
+    # raw competition API payload (or None during backtests); analysts pull what they need
+    api_payload: dict | None
 
     # updated by workflow
     # ticker -> signal of all analysts

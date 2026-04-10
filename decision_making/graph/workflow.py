@@ -6,7 +6,6 @@ from agents.registry import AgentRegistry
 from graph.constants import AgentKey
 from graph.schema import Action, Decision, FundState, Portfolio, Position
 from langgraph.graph import END, START, StateGraph
-from news_pipeline import ingest_news
 from util.db_helper import get_db
 from util.logger import logger
 
@@ -109,9 +108,6 @@ class AgentWorkflow:
         for ticker in self.tickers:
             self.load_analysts(ticker)
 
-            # Ingest news for this ticker (API payload primary, AMA fallback)
-            news_items = ingest_news(ticker, self.trading_date, self.api_payload)
-
             # init FundState
             state = FundState(
                 ticker=ticker,
@@ -120,7 +116,7 @@ class AgentWorkflow:
                 llm_config=self.llm_config,
                 portfolio=portfolio,
                 num_tickers=len(self.tickers),
-                news_items=news_items,
+                api_payload=self.api_payload,
             )
 
             # build the workflow
