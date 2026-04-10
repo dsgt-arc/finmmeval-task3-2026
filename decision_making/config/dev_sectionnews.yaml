@@ -1,0 +1,22 @@
+# Deep Fund Configuration — section_news analyst test
+exp_name: "dev_sectionnews"
+
+# Trading settings
+cashflow: 100000
+tickers:
+  - TSLA
+  - BTC
+
+# Workflow execution mode
+sequential_mode: false # false for parallel, true for sequential execution
+
+# Analysts to run, refer to graph.constants.py
+# section_news replaces company_news; technical provides price-based signals
+workflow_analysts:
+  - technical
+  - section_news
+
+# LLM model settings, refer to llm/inference.py: LLMConfig
+llm:
+  provider: "OpenAI"
+  model: "gpt-4o-mini"
