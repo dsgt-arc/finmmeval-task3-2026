@@ -128,8 +128,8 @@ def keyword_sentiment(text: str) -> tuple[Signal, float]:
 # News classifier (reuses the rules from news_classifier.py)
 # ---------------------------------------------------------------------------
 
-from graph.schema import NewsItem  # noqa: E402
 from news_classifier import classify_by_rules, classify_by_source  # noqa: E402
+from news_pipeline import NewsItem  # noqa: E402
 
 
 def classify_news_item(item: NewsItem) -> NewsSection:
