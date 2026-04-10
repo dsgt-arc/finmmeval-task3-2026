@@ -10,11 +10,20 @@ section classification works identically regardless of origin.
 
 from __future__ import annotations
 
+from dataclasses import dataclass
 import datetime
 from typing import Any
 
-from graph.schema import NewsItem
 from util.logger import logger
+
+
+@dataclass
+class NewsItem:
+    """A single piece of news or filing text with its source metadata."""
+
+    text: str
+    source: str = "ama"
+    date: str | None = None
 
 
 def ingest_news(

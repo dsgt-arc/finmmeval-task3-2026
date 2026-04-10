@@ -15,23 +15,12 @@ class AnalystSignal(BaseModel):
     )
     justification: str = Field(description="Brief explanation for the signal", default="No justification provided due to error")
 
-
-class NewsItem(BaseModel):
-    """A single piece of news or filing text with its source metadata."""
-
-    text: str = Field(description="Raw news/filing content")
-    source: str = Field(description="Origin of the item: 'api_news', 'api_10k', 'api_10q', 'ama'", default="ama")
-    date: str | None = Field(description="ISO date string for the item", default=None)
-
-
-class SectionSignal(BaseModel):
-    """Signal produced by analysing one news section."""
-
-    section: str = Field(description="News section identifier")
-    direction: Signal = Field(default=Signal.NEUTRAL, description="Bullish / Bearish / Neutral")
-    confidence: float = Field(default=0.5, ge=0.0, le=1.0, description="Model confidence in [0, 1]")
-    horizon: str = Field(default="short", description="Investment horizon: short / medium / long")
-    rationale: str = Field(default="No rationale provided", description="Brief explanation")
+    # Per-section fields populated only by the section_news analyst.
+    section: str | None = Field(description="News section this signal covers (section_news analyst only)", default=None)
+    confidence: float | None = Field(
+        description="Model confidence in [0, 1] (section_news analyst only)", default=None, ge=0.0, le=1.0
+    )
+    horizon: str | None = Field(description="Investment horizon: short / medium / long (section_news analyst only)", default=None)
 
 
 class Decision(BaseModel):
@@ -81,13 +70,11 @@ class FundState(TypedDict):
     portfolio: Portfolio = Field(description="Portfolio for the fund.")
     num_tickers: int = Field(description="Number of tickers in the fund.")
 
-    # news items ingested from API payload or AMA fallback
-    news_items: list[NewsItem]
+    # news items ingested from API payload or AMA fallback (NewsItem dataclass from news_pipeline)
+    news_items: list
 
     # updated by workflow
     # ticker -> signal of all analysts
     analyst_signals: Annotated[list[AnalystSignal], operator.add]
-    # section-level breakdown produced by section_news analyst
-    section_signals: Annotated[list[SectionSignal], operator.add]
     # portfolio manager output
     decision: Decision
