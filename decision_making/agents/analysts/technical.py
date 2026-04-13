@@ -12,6 +12,7 @@ from util.db_helper import get_db
 from util.logger import logger
 
 from decision_making.ama_data import load_specific_data
+from decision_making.ml_model.technical_indicators import _calculate_bollinger, _calculate_rsi
 
 # Technical Thresholds
 thresholds = {
@@ -255,53 +256,3 @@ def get_support_resistance(prices_df, params):
         result += f"- Price to support: {(current_price - support) / support}\n"
         result += f"- Price to resistance: {(resistance - current_price) / current_price}\n"
         return result
-
-
-def _calculate_rsi(prices: pd.Series, period: int = 14) -> pd.Series:
-    """Calculate Relative Strength Index.
-
-    Args:
-        prices: Price series
-        period: RSI period (default: 14)
-
-    Returns:
-        RSI series (values from 0 to 100)
-    """
-    delta = prices.diff()
-    gain = delta.where(delta > 0, 0).fillna(0)
-    loss = -delta.where(delta < 0, 0).fillna(0)
-
-    avg_gain = gain.rolling(window=period).mean()
-    avg_loss = loss.rolling(window=period).mean()
-
-    # Avoid division by zero
-    rs = avg_gain / (avg_loss + 1e-10)
-    rsi = 100 - (100 / (1 + rs))
-
-    return rsi
-
-
-def _calculate_bollinger(prices: pd.Series, window: int = 20) -> pd.Series:
-    """Calculate position within Bollinger Bands.
-
-    Args:
-        prices: Price series
-        window: Bollinger Band window (default: 20)
-
-    Returns:
-        Position series (0 = at lower band, 1 = at upper band, 0.5 = at middle)
-    """
-    sma = prices.rolling(window).mean()
-    std_dev = prices.rolling(window).std()
-
-    upper_band = sma + (std_dev * 2)
-    lower_band = sma - (std_dev * 2)
-
-    # Normalize position within bands (0 to 1)
-    band_width = upper_band - lower_band
-    position = (prices - lower_band) / (band_width + 1e-10)
-
-    # Clip to [0, 1] range (price can be outside bands)
-    position = position.clip(0, 1)
-
-    return position, upper_band, lower_band

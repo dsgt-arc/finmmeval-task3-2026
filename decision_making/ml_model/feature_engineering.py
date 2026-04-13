@@ -11,6 +11,7 @@ import numpy as np
 import pandas as pd
 
 from ..sp500_data import load_single_stocks, load_stock_metric_long, load_stock_sector
+from .technical_indicators import _calculate_bollinger, _calculate_rsi
 
 
 def create_lagged_returns(prices_wide: pd.DataFrame, lags: list[int]) -> pd.DataFrame:
@@ -106,11 +107,10 @@ def compute_technical_indicators_panel(returns_wide: pd.DataFrame, adj_close_wid
         ticker_df = pd.DataFrame({"date": prices.index, "ticker": ticker})
 
         # Calculate RSI
-        rsi = _calculate_rsi(prices, period=14)
-        ticker_df["rsi_14"] = rsi.values
+        ticker_df["rsi_14"] = _calculate_rsi(prices, period=14).values
 
         # Calculate Bollinger Bands position
-        bb_position = _calculate_bollinger_position(prices, window=20)
+        bb_position, _, _ = _calculate_bollinger(prices, window=20)
         ticker_df["bb_position"] = bb_position.values
 
         # Calculate volatility (21-day rolling, annualized)
@@ -148,57 +148,6 @@ def compute_technical_indicators_panel(returns_wide: pd.DataFrame, adj_close_wid
     result_df = result_df.dropna()
 
     return result_df
-
-
-def _calculate_rsi(prices: pd.Series, period: int = 14) -> pd.Series:
-    """Calculate Relative Strength Index.
-
-    Args:
-        prices: Price series
-        period: RSI period (default: 14)
-
-    Returns:
-        RSI series (values from 0 to 100)
-    """
-    delta = prices.diff()
-    gain = delta.where(delta > 0, 0).fillna(0)
-    loss = -delta.where(delta < 0, 0).fillna(0)
-
-    avg_gain = gain.rolling(window=period).mean()
-    avg_loss = loss.rolling(window=period).mean()
-
-    # Avoid division by zero
-    rs = avg_gain / (avg_loss + 1e-10)
-    rsi = 100 - (100 / (1 + rs))
-
-    return rsi
-
-
-def _calculate_bollinger_position(prices: pd.Series, window: int = 20) -> pd.Series:
-    """Calculate position within Bollinger Bands.
-
-    Args:
-        prices: Price series
-        window: Bollinger Band window (default: 20)
-
-    Returns:
-        Position series (0 = at lower band, 1 = at upper band, 0.5 = at middle)
-    """
-    sma = prices.rolling(window).mean()
-    std_dev = prices.rolling(window).std()
-
-    upper_band = sma + (std_dev * 2)
-    lower_band = sma - (std_dev * 2)
-
-    # Normalize position within bands (0 to 1)
-    # Avoid division by zero
-    band_width = upper_band - lower_band
-    position = (prices - lower_band) / (band_width + 1e-10)
-
-    # Clip to [0, 1] range (price can be outside bands)
-    position = position.clip(0, 1)
-
-    return position
 
 
 def add_cross_sectional_features(features_long: pd.DataFrame) -> pd.DataFrame:

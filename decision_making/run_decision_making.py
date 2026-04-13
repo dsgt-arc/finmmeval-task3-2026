@@ -1,5 +1,5 @@
 import argparse
-from typing import Any, Dict
+from typing import Any
 
 from dotenv import load_dotenv
 
@@ -12,7 +12,7 @@ from util.db_helper import db_initialize, get_db
 from util.logger import logger
 
 
-def load_portfolio_config(cfg: Dict[str, Any], db):
+def load_portfolio_config(cfg: dict[str, Any], db):
     """Load and validate config based on experiment configuration."""
     config_id = db.get_config_id_by_name(cfg["exp_name"])
     if not config_id:

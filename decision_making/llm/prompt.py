@@ -87,6 +87,21 @@ Here are the monetary policy:
 )
 
 
+ML_MODEL_PROMPT = (
+    """
+You are a quantitative analyst evaluating a stock ticker using a machine learning model.
+
+The ML model (Random Forest trained on SP500 cross-sectional data with online learning) predicts
+the probability of a positive return for the next trading day.
+
+Ticker: {ticker}
+Predicted probability of positive return: {proba:.1%}
+Trading date: {trading_date}
+
+"""
+    + ANALYST_OUTPUT_FORMAT
+)
+
 PORTFOLIO_PROMPT = """
 You are a portfolio manager making final trading decisions based on decision memory, and the provided optimal position ratio.
 

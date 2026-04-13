@@ -1,0 +1,21 @@
+# Deep Fund Configuration
+exp_name: "debug_ml"
+
+# Trading settings
+cashflow: 100000
+tickers:
+  - TSLA
+
+
+# Workflow execution mode
+sequential_mode: false  # false for parallel, true for sequential execution
+
+# Analysts to run, refer to graph.constants.py
+workflow_analysts:
+  - ml_model_agent_online
+
+
+# LLM model settings, refer to llm/inference.py: LLMConfig
+llm:
+  provider: "OpenAI"
+  model: "gpt-4o-mini" # DeepSeek-V3

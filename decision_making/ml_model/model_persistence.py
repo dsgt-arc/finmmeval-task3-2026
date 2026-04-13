@@ -24,8 +24,8 @@ def save_model(model, metadata: dict, path: Path) -> Path:
     joblib.dump(model, path)
 
     # Save metadata alongside model
-    meta_path = path.with_suffix('.json')
-    with open(meta_path, 'w') as f:
+    meta_path = path.with_suffix(".json")
+    with Path.open(meta_path, "w") as f:
         json.dump(metadata, f, indent=2)
 
     return path
@@ -44,8 +44,8 @@ def load_model(path: Path) -> tuple:
 
     model = joblib.load(path)
 
-    meta_path = path.with_suffix('.json')
-    with open(meta_path) as f:
+    meta_path = path.with_suffix(".json")
+    with Path.open(meta_path) as f:
         metadata = json.load(f)
 
     return model, metadata
