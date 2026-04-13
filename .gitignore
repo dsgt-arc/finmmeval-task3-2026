@@ -180,3 +180,7 @@ data/
 # Sqlite
 *.db
 decision_making/database/
+*.json
+*.pkl
+*.csv
+*.png
