@@ -21,6 +21,7 @@ class AgentRegistry:
         AgentKey.MACROECONOMIC,
         AgentKey.POLICY,
         AgentKey.DUMMY,
+        AgentKey.COMPANY_NEWS_ENHANCED,
         AgentKey.ML_MODEL_ONLINE,
     ]
 
@@ -89,4 +90,10 @@ class AgentRegistry:
             key=AgentKey.ML_MODEL_ONLINE,
             agent_func=ml_model_agent_online,
             agent_doc="ML analyst with cross-sectional online learning: updates model daily from full SP500 cross-section before predicting the competition ticker.",
+        )
+
+        cls.register_agent(
+            key=AgentKey.COMPANY_NEWS_ENHANCED,
+            agent_func=company_news_enhanced_agent,
+            agent_doc="Enhanced company news analyst with per-article analysis and trend tracking.",
         )

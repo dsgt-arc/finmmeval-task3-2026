@@ -9,6 +9,7 @@ class AgentKey:
     COMPANY_NEWS = "company_news"
     MACROECONOMIC = "macroeconomic"
     POLICY = "policy"
+    COMPANY_NEWS_ENHANCED = "company_news_enhanced"
     DUMMY = "dummy"
     ML_MODEL_ONLINE = "ml_model_agent_online"
     # workflow keys

@@ -179,7 +179,7 @@ data/
 
 # Sqlite
 *.db
-decision_making/database/
+data/
 *.json
 *.pkl
 *.csv
