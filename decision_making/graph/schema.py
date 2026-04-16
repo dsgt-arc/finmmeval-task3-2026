@@ -1,10 +1,11 @@
 from datetime import datetime
 import operator
-from typing import Any, Dict, List
+from typing import Annotated, Any
 
-from graph.constants import Action, Signal
 from pydantic import BaseModel, Field
-from typing_extensions import Annotated, TypedDict
+from typing_extensions import TypedDict
+
+from decision_making.graph.constants import Action, Signal
 
 
 class AnalystSignal(BaseModel):
@@ -14,6 +15,18 @@ class AnalystSignal(BaseModel):
         description=f"Choose from {Signal.BULLISH}, {Signal.BEARISH}, or {Signal.NEUTRAL}", default=Signal.NEUTRAL
     )
     justification: str = Field(description="Brief explanation for the signal", default="No justification provided due to error")
+
+    # Enhanced sentiment fields (optional for backward compatibility)
+    signal_strength: float | None = Field(
+        description="Sentiment strength from -1.0 (strong bearish) to +1.0 (strong bullish)", default=None, ge=-1.0, le=1.0
+    )
+
+
+class RelevanceCheck(BaseModel):
+    """Check if content is relevant for next-day price prediction"""
+
+    is_relevant: bool = Field(description="True if relevant for next-day price movement")
+    reasoning: str = Field(description="Brief explanation", default="")
 
 
 class Decision(BaseModel):
@@ -59,12 +72,12 @@ class FundState(TypedDict):
     exp_name: str = Field(description="Experiment name.")
     trading_date: datetime = Field(description="Trading date.")
     ticker: str = Field(description="Ticker in-the-flow.")
-    llm_config: Dict[str, Any] = Field(description="LLM configuration.")
+    llm_config: dict[str, Any] = Field(description="LLM configuration.")
     portfolio: Portfolio = Field(description="Portfolio for the fund.")
     num_tickers: int = Field(description="Number of tickers in the fund.")
 
     # updated by workflow
     # ticker -> signal of all analysts
-    analyst_signals: Annotated[List[AnalystSignal], operator.add]
+    analyst_signals: Annotated[list[AnalystSignal], operator.add]
     # portfolio manager output
     decision: Decision

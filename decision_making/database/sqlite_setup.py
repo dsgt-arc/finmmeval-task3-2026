@@ -1,6 +1,6 @@
 import os
-import sqlite3
 from pathlib import Path
+import sqlite3
 
 from dotenv import load_dotenv
 
@@ -71,6 +71,7 @@ def init_database():
         llm_prompt TEXT NOT NULL,
         analyst VARCHAR(50) NOT NULL,
         signal VARCHAR(10) NOT NULL,
+        signal_strength REAL DEFAULT NULL,
         justification TEXT NOT NULL ,
         FOREIGN KEY (portfolio_id) REFERENCES portfolio(id)
     )
@@ -91,6 +92,24 @@ def init_database():
     conn.close()
 
 
+def migrate_signal_table_v2():
+    """Add sentiment analysis fields to signal table"""
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+
+    # Check existing columns
+    cursor.execute("PRAGMA table_info(signal)")
+    existing_cols = {row[1] for row in cursor.fetchall()}
+
+    # Add new columns if they don't exist
+    if "signal_strength" not in existing_cols:
+        cursor.execute("ALTER TABLE signal ADD COLUMN signal_strength REAL DEFAULT NULL")
+
+    conn.commit()
+    conn.close()
+
+
 if __name__ == "__main__":
     init_database()
-    print(f"Database initialized at {DB_PATH}")
+    migrate_signal_table_v2()
+    print(f"Database initialized and migrated at {DB_PATH}")

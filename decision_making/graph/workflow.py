@@ -1,5 +1,5 @@
 from time import perf_counter
-from typing import Any, Dict
+from typing import Any
 
 from agents.planner import planner_agent
 from agents.registry import AgentRegistry
@@ -13,7 +13,7 @@ from util.logger import logger
 class AgentWorkflow:
     """Trading Decision Workflow."""
 
-    def __init__(self, config: Dict[str, Any], config_id: str):
+    def __init__(self, config: dict[str, Any], config_id: str):
         self.llm_config = config["llm"]
         self.tickers = config["tickers"]
         self.exp_name = config["exp_name"]

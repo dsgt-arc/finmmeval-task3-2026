@@ -27,19 +27,29 @@
 
 set -e  # Exit on error
 
+# Get the directory where this script is located
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
+
+# Change to project root
+cd "$PROJECT_ROOT"
+
+# Set PYTHONPATH
+export PYTHONPATH="$PROJECT_ROOT:$PROJECT_ROOT/decision_making"
+
 # Default config path
-CONFIG_PATH=${1:-"decision_making/config/dev.yaml"}
+CONFIG_PATH=${1:-"decision_making/config/dev_cne.yaml"}
 
 # If dates not provided, query from data
 if [ "$#" -eq 0 ] || [ "$#" -eq 1 ]; then
     echo "Querying available date range from data..."
 
     # Get min and max dates from data
-    DATES=$(python3 << EOF
+    DATES=$(python << EOF
 import sys
 import yaml
 from datetime import datetime, timedelta
-from decision_making.data import load_data
+from ama_data import load_data
 
 # Load config to get first ticker
 with open("$CONFIG_PATH") as f:
@@ -102,7 +112,7 @@ echo "Date range: $START_DATE to $END_DATE"
 echo ""
 
 # Use Python to generate and iterate dates (cross-platform)
-python3 << EOF
+python << EOF
 from datetime import datetime, timedelta
 import os
 import subprocess

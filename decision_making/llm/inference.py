@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 import os
-from typing import Any, Dict
+from typing import Any
 
 from llm.provider import Provider
 from pydantic import BaseModel
@@ -43,7 +43,7 @@ def get_model(config: LLMConfig):
         raise ValueError(f"{provider} Chat Error: {e}")
 
 
-def agent_call(prompt: str, llm_config: Dict[str, Any], pydantic_model: BaseModel):
+def agent_call(prompt: str, llm_config: dict[str, Any], pydantic_model: BaseModel):
     """
     Makes an agent call with retry logic and structured output.
 
