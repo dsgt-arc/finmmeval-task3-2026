@@ -1,7 +1,6 @@
 """Simple model loader with module-level caching."""
 
 from datetime import datetime
-import json
 from pathlib import Path
 
 from .config import (
@@ -100,6 +99,7 @@ def _train_initial_model(model_dir: Path) -> None:
     model_dir.mkdir(parents=True, exist_ok=True)
 
     final_model = results.iloc[-1]["trained_model"]
+    reference_data = build_reference_data(df, cfg)
     save_model(
         model=final_model,
         metadata={
@@ -114,13 +114,10 @@ def _train_initial_model(model_dir: Path) -> None:
                 "auc": float(results["auc"].mean()),
             },
             "n_samples": len(df),
+            **reference_data,
         },
         path=model_dir / MODEL_FILENAME,
     )
-
-    reference_data = build_reference_data(df, cfg)
-    with Path.open(model_dir / REFERENCE_FILENAME, "w") as f:
-        json.dump(reference_data, f, indent=2)
 
     logger.info("Initial training complete. Model saved to: %s", model_dir)
 

@@ -19,7 +19,7 @@
             "program": "${file}",
             "console": "integratedTerminal",
             "justMyCode": true,
-            "args": ["--config", "config/debug_ml.yaml", "--trading-date", "2024-08-02", "--local-db"],
+            "args": ["--config", "config/debug_ml.yaml", "--trading-date", "2024-08-03", "--local-db"],
             "cwd": "${fileDirname}"
         }
     ]

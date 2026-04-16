@@ -13,7 +13,7 @@ MODEL_PARAMS = {
     "n_estimators": 500,
     "max_depth": 5,
     "min_samples_split": 100,
-    "min_samples_leaf": 50,
+    "max_features": "sqrt",
     "random_state": 42,
     "n_jobs": 4,
 }

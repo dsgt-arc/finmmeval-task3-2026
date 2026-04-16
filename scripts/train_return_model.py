@@ -1,5 +1,4 @@
 from datetime import datetime
-import json
 from pathlib import Path
 
 import matplotlib
@@ -8,7 +7,7 @@ import matplotlib.pyplot as plt
 from decision_making.ml_model.config import COMPETITION_TRAIN_START
 from decision_making.ml_model.config import TRAIN_CONFIG as CONFIG
 from decision_making.ml_model.feature_engineering import build_feature_matrix
-from decision_making.ml_model.ml_model_manager import REFERENCE_FILENAME, build_reference_data
+from decision_making.ml_model.ml_model_manager import MODEL_FILENAME, build_reference_data
 from decision_making.ml_model.model_persistence import save_model
 from decision_making.models import RandomForestReturnModel
 from decision_making.validation import run_walk_forward_validation
@@ -91,6 +90,7 @@ def main():
     # Save production model for inference
     print("\nSaving production model...")
     final_model = results.iloc[-1]["trained_model"]
+    reference_data = build_reference_data(df, CONFIG)
     model_path = save_model(
         model=final_model,
         metadata={
@@ -105,21 +105,12 @@ def main():
                 "auc": float(results["auc"].mean()),
             },
             "n_samples": len(df),
+            **reference_data,
         },
-        path=output_dir / "production_model.pkl",
+        path=output_dir / MODEL_FILENAME,
     )
-    print(f"  - Saved production model to: {model_path}")
-    print(f"  - Saved model metadata to: {model_path.with_suffix('.json')}")
-
-    # Save reference data for inference (SP500 distributions)
-    print("\nSaving reference data for inference...")
-
-    # Save reference data
-    reference_data = build_reference_data(df, CONFIG)
-    reference_data_path = output_dir / REFERENCE_FILENAME
-    with Path.open(reference_data_path, "w") as f:
-        json.dump(reference_data, f, indent=2)
-    print(f"  - Saved reference data to: {reference_data_path}")
+    print(f"  - Saved model to:    {model_path}")
+    print(f"  - Saved metadata to: {model_path.with_suffix('.json')}")
     print(
         f"  - Reference data includes {len(reference_data['sectors'])} sectors and {len(reference_data['feature_distributions'])} feature distributions"
     )

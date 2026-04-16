@@ -124,6 +124,11 @@ def ml_model_agent_online(state: FundState):
                     cs_df["target"] = cs_df["ticker"].map(targets)
                     cs_df = cs_df.dropna(subset=["target"])
 
+                    # Fill any feature columns missing from inference (e.g. sector_Unknown)
+                    for col in feature_names:
+                        if col not in cs_df.columns:
+                            cs_df[col] = 0
+
                     # Select only columns present in the trained model
                     valid_rows = cs_df[feature_names].notna().all(axis=1)
                     cs_df = cs_df[valid_rows]
@@ -140,6 +145,7 @@ def ml_model_agent_online(state: FundState):
             logger.warning(f"Cross-sectional online learning failed: {e}")
 
     # --- Step 2: Predict for competition ticker ---
+    prompt = ""
     try:
         prices_df = _load_prices_for_inference(
             ticker,
@@ -147,6 +153,11 @@ def ml_model_agent_online(state: FundState):
             price_data,
         )
         features = build_single_stock_features(prices_df, ticker, manager.reference_data)
+
+        # Fill any feature columns missing from inference (e.g. sector_Unknown)
+        for col in feature_names:
+            if col not in features.columns:
+                features[col] = 0
 
         X = features[feature_names].values.reshape(1, -1)
         proba = manager.predict(X)[0, 1]
