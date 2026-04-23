@@ -27,6 +27,11 @@
 
 set -e  # Exit on error
 
+# Raise file descriptor limit — online learning opens many files (yfinance SQLite
+# cache + parquet files) across ~500 SP500 tickers. macOS non-interactive shells
+# default to 256; 65536 matches typical interactive terminal sessions.
+ulimit -n 65536 2>/dev/null || ulimit -n 4096 2>/dev/null || true
+
 # Get the directory where this script is located
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"

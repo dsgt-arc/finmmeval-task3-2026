@@ -4,6 +4,7 @@
     // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
     "version": "0.2.0",
     "configurations": [
+
         {
             "name": "Python Debugger: Current File",
             "type": "debugpy",
@@ -18,7 +19,7 @@
             "program": "${file}",
             "console": "integratedTerminal",
             "justMyCode": true,
-            "args": ["--config", "config/debug_pm.yaml", "--trading-date", "2024-08-02", "--local-db"],
+            "args": ["--config", "config/debug_ml.yaml", "--trading-date", "2024-08-03", "--local-db"],
             "cwd": "${fileDirname}"
         }
     ]

@@ -180,3 +180,7 @@ data/
 # Sqlite
 *.db
 data/
+*.json
+*.pkl
+*.csv
+*.png

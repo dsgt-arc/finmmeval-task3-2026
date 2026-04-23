@@ -1,3 +1,17 @@
+from datetime import datetime
+from pathlib import Path
+
+import matplotlib
+import matplotlib.pyplot as plt
+
+from decision_making.ml_model.config import COMPETITION_TRAIN_START
+from decision_making.ml_model.config import TRAIN_CONFIG as CONFIG
+from decision_making.ml_model.feature_engineering import build_feature_matrix
+from decision_making.ml_model.ml_model_manager import MODEL_FILENAME, build_reference_data
+from decision_making.ml_model.model_persistence import save_model
+from decision_making.models import RandomForestReturnModel
+from decision_making.validation import run_walk_forward_validation
+
 """Train and evaluate Random Forest model for S&P 500 return prediction.
 
 This script orchestrates the complete pipeline:
@@ -10,34 +24,8 @@ Usage:
     python scripts/train_return_model.py
 """
 
-from pathlib import Path
-
-import matplotlib
-import matplotlib.pyplot as plt
-
-from decision_making.feature_engineering import build_feature_matrix
-from decision_making.models import RandomForestReturnModel
-from decision_making.validation import run_walk_forward_validation
-
 # Use non-interactive backend for plotting
 matplotlib.use("Agg")
-
-# Configuration
-CONFIG = {
-    "min_obs": 200,  # Minimum observations per stock
-    "lags": [1, 5, 21],  # 1-day, 1-week, 1-month lags
-    "initial_train_years": 12,  # Initial training period (years)
-    "step_months": 6,  # Retrain frequency (months)
-    "test_months": 3,  # Test window size (months)
-    "embargo_days": 21,  # Gap to prevent leakage (should equal max lag)
-    "model_params": {
-        "n_estimators": 100,  # Number of trees
-        "max_depth": 8,  # Maximum tree depth
-        "min_samples_split": 100,  # Min samples to split
-        "min_samples_leaf": 50,  # Min samples in leaf
-        "random_state": 42,  # Reproducibility
-    },
-}
 
 
 def main():
@@ -48,6 +36,10 @@ def main():
     # Step 1: Build feature matrix
     print("\n[1/4] Building feature matrix...")
     df = build_feature_matrix(min_obs=CONFIG["min_obs"], lags=CONFIG["lags"])
+
+    # Filter to training data only (before competition period)
+    df = df[df["date"] < COMPETITION_TRAIN_START]
+    print(f"  - Filtered to data before {COMPETITION_TRAIN_START}: {len(df):,} rows remaining")
 
     # Step 2: Define features
     print("\n[2/4] Defining features...")
@@ -94,6 +86,34 @@ def main():
     # Save feature importance
     importance_df.to_csv(output_dir / "feature_importance.csv", index=False)
     print(f"  - Saved feature importance to: {output_dir / 'feature_importance.csv'}")
+
+    # Save production model for inference
+    print("\nSaving production model...")
+    final_model = results.iloc[-1]["trained_model"]
+    reference_data = build_reference_data(df, CONFIG)
+    model_path = save_model(
+        model=final_model,
+        metadata={
+            "training_date": datetime.now().isoformat(),
+            "feature_names": feature_cols,
+            "model_params": CONFIG["model_params"],
+            "validation_metrics": {
+                "accuracy": float(results["accuracy"].mean()),
+                "precision": float(results["precision"].mean()),
+                "recall": float(results["recall"].mean()),
+                "f1": float(results["f1"].mean()),
+                "auc": float(results["auc"].mean()),
+            },
+            "n_samples": len(df),
+            **reference_data,
+        },
+        path=output_dir / MODEL_FILENAME,
+    )
+    print(f"  - Saved model to:    {model_path}")
+    print(f"  - Saved metadata to: {model_path.with_suffix('.json')}")
+    print(
+        f"  - Reference data includes {len(reference_data['sectors'])} sectors and {len(reference_data['feature_distributions'])} feature distributions"
+    )
 
     # Plot metrics over time
     print("\nGenerating plots...")
@@ -162,6 +182,9 @@ def main():
     print("  2. feature_importance.csv - Feature importance rankings")
     print("  3. metrics_over_time.png - Performance over validation folds")
     print("  4. feature_importance.png - Top features visualization")
+    print("  5. production_model.pkl - Trained model for inference")
+    print("  6. production_model_metadata.json - Model metadata")
+    print("  7. reference_data.json - SP500 reference distributions for cross-sectional features")
     print("=" * 80)
 
 

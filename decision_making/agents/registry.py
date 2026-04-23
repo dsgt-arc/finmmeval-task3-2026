@@ -22,6 +22,7 @@ class AgentRegistry:
         AgentKey.POLICY,
         AgentKey.DUMMY,
         AgentKey.COMPANY_NEWS_ENHANCED,
+        AgentKey.ML_MODEL_ONLINE,
     ]
 
     @classmethod
@@ -83,6 +84,12 @@ class AgentRegistry:
             key=AgentKey.DUMMY,
             agent_func=dummy_agent,
             agent_doc="Dummy analyst for debugging - returns neutral signal with no analysis.",
+        )
+
+        cls.register_agent(
+            key=AgentKey.ML_MODEL_ONLINE,
+            agent_func=ml_model_agent_online,
+            agent_doc="ML analyst with cross-sectional online learning: updates model daily from full SP500 cross-section before predicting the competition ticker.",
         )
 
         cls.register_agent(
