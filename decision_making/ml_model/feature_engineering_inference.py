@@ -7,6 +7,7 @@ import pandas as pd
 import polars as pl
 from scipy.stats import percentileofscore
 
+from decision_making.ml_model.config import EXTRA_TICKER_SECTORS
 from decision_making.ml_model.technical_indicators import _calculate_bollinger, _calculate_rsi
 
 
@@ -77,7 +78,7 @@ def build_single_stock_features(
     # 4. Cross-sectional features
     sectors = reference_data.get("sectors", [])
     sector_map = reference_data.get("sector_map", {})
-    ticker_sector = sector_map.get(ticker, "Technology")
+    ticker_sector = EXTRA_TICKER_SECTORS.get(ticker) or sector_map.get(ticker, "")
 
     # Sector dummies
     for sector in sectors:
