@@ -49,6 +49,8 @@ The request flow is:
   - Returns the response in the exact competition format.
   - This endpoint only returns the 3-way signal, not portfolio allocations or
     any secondary metrics.
+  - Optional context fields like `news`, `10k`, and `10q` may be omitted or
+    set to `null` on sparse days.
 
 - `api/decision_bridge.py`
   - Orchestration layer.
@@ -171,3 +173,14 @@ If `make` is not installed, use the raw `uv run ...` commands shown above instea
   3-minute organizer limit.
 - The server uses the `PORT` environment variable if your hosting platform provides one.
 - For public deployment, you still need a stable HTTPS URL or container service.
+
+## Robustness Notes
+
+- The request model accepts sparse context on a per-symbol basis, including
+  `news`, `momentum`, `10k`, `10q`, and `history_price` entries that may be
+  missing or `null` on a given day.
+- We added regression coverage for the common organizer cases:
+  - TSLA with populated `10k` and `10q`
+  - BTC with `10k = null` and `10q = null`
+- The integration tests exercise the real bridge and workflow path, not just the
+  HTTP wrapper, so these cases are covered end to end.

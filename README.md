@@ -69,6 +69,8 @@ The expected endpoint shape is:
 ## Notes
 
 - The API accepts optional `news`, `10k`, and `10q` fields.
+- Those optional context fields can also be omitted or set to `null` on sparse days.
+- We added regression tests for TSLA with filings present and BTC with `10k` / `10q` set to `null`.
 - If `symbol` is missing, the API falls back to the key in `price`.
 - If the workflow bridge times out or fails, the API defaults to `HOLD`.
 - The subprocess bridge uses a 170-second timeout so it stays safely under the

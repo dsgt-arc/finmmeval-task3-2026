@@ -54,6 +54,35 @@ def sample_payload():
     }
 
 
+@pytest.fixture
+def btc_payload():
+    # A BTC payload with sparse filing context to mirror the organizer note
+    # that 10-K / 10-Q may be null on some days.
+    return {
+        "date": "2026-03-19",
+        "price": {"BTC": 83000.0},
+        "news": {"BTC": ["Bitcoin news on 2026-03-19"]},
+        "symbol": ["BTC"],
+        "momentum": {"BTC": "neutral"},
+        "10k": None,
+        "10q": None,
+        "history_price": {
+            "BTC": [
+                {"date": "2026-03-10", "price": 81500.0},
+                {"date": "2026-03-11", "price": 82000.0},
+                {"date": "2026-03-12", "price": 82500.0},
+                {"date": "2026-03-13", "price": 81800.0},
+                {"date": "2026-03-14", "price": 82100.0},
+                {"date": "2026-03-15", "price": 82600.0},
+                {"date": "2026-03-16", "price": 82800.0},
+                {"date": "2026-03-17", "price": 82900.0},
+                {"date": "2026-03-18", "price": 82750.0},
+                {"date": "2026-03-19", "price": 83000.0},
+            ]
+        },
+    }
+
+
 def test_health_endpoint(client):
     response = client.get("/health")
 
@@ -109,6 +138,50 @@ def test_competition_action_rejects_missing_date(client, sample_payload):
     response = client.post("/competition_action/", json=sample_payload)
 
     assert response.status_code == 422
+
+
+def test_competition_action_accepts_null_optional_context(client, sample_payload, monkeypatch):
+    sample_payload = dict(sample_payload)
+    sample_payload["news"] = {"TSLA": None}
+    sample_payload["momentum"] = {"TSLA": None}
+    sample_payload["10k"] = {"TSLA": None}
+    sample_payload["10q"] = {"TSLA": None}
+    sample_payload["history_price"] = {"TSLA": None}
+
+    observed = {}
+
+    def fake_recommend_action(payload):
+        observed["payload"] = payload
+        return "BUY"
+
+    monkeypatch.setattr("api.simple_trading_api.recommend_action", fake_recommend_action)
+
+    response = client.post("/competition_action/", json=sample_payload)
+
+    assert response.status_code == 200
+    assert response.json() == {"recommended_action": "BUY"}
+    assert observed["payload"]["symbol"] == ["TSLA"]
+    assert observed["payload"]["news"] == {"TSLA": None}
+    assert observed["payload"]["10k"] == {"TSLA": None}
+    assert observed["payload"]["10q"] == {"TSLA": None}
+
+
+def test_competition_action_accepts_btc_with_null_filings(client, btc_payload, monkeypatch):
+    observed = {}
+
+    def fake_recommend_action(payload):
+        observed["payload"] = payload
+        return "HOLD"
+
+    monkeypatch.setattr("api.simple_trading_api.recommend_action", fake_recommend_action)
+
+    response = client.post("/competition_action/", json=btc_payload)
+
+    assert response.status_code == 200
+    assert response.json() == {"recommended_action": "HOLD"}
+    assert observed["payload"]["symbol"] == ["BTC"]
+    assert observed["payload"]["10k"] is None
+    assert observed["payload"]["10q"] is None
 
 
 def test_bridge_normalizes_worker_output(monkeypatch, tmp_path):

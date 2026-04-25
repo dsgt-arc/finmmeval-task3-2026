@@ -36,14 +36,15 @@ class TradingRequest(BaseModel):
 
     # This is the organizer payload. Some fields are optional because the
     # competition text says news and filings may be absent for some assets.
+    # We also allow per-symbol null values so sparse days do not break parsing.
     date: str
     price: Dict[str, float]
-    news: Optional[Dict[str, List[str]]] = None
+    news: Optional[Dict[str, List[str] | None]] = None
     symbol: Optional[List[str]] = None
-    momentum: Dict[str, str] = Field(default_factory=dict)
-    ten_k: Optional[Dict[str, List[str]]] = Field(default=None, alias="10k")
-    ten_q: Optional[Dict[str, List[str]]] = Field(default=None, alias="10q")
-    history_price: Dict[str, List[HistoricalPrice]] = Field(default_factory=dict)
+    momentum: Optional[Dict[str, str | None]] = None
+    ten_k: Optional[Dict[str, List[str] | None]] = Field(default=None, alias="10k")
+    ten_q: Optional[Dict[str, List[str] | None]] = Field(default=None, alias="10q")
+    history_price: Dict[str, List[HistoricalPrice] | None] = Field(default_factory=dict)
 
 
 class TradingResponse(BaseModel):

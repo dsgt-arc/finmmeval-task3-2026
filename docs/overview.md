@@ -7,6 +7,7 @@ This folder contains the project documentation for the current repo layout.
 - [README.md](../README.md) for the project overview, setup, and test commands.
 - [docs/test_API.md](./test_API.md) for local competition-endpoint testing and the live smoke test.
 - [docs/workflow.io](./workflow.io) for the internal `decision_making` workflow diagram.
+- [docs/test_API.md](./test_API.md#robustness-notes) for the API hardening and sparse-context test coverage.
 
 ## Archived Material
 
