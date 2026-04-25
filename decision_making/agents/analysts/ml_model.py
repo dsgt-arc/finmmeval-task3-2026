@@ -15,7 +15,6 @@ from decision_making.ml_model.feature_engineering_inference import (
     build_cross_sectional_features_for_date,
     build_single_stock_features,
 )
-from decision_making.ml_model.ml_model_manager import get_model_manager
 
 """ML analyst using Random Forest trained on SP500 data."""
 
@@ -77,6 +76,10 @@ def ml_model_agent_online(state: FundState):
     Returns:
         Dict with analyst_signals list
     """
+    # Import the model manager lazily so workflows that do not use this analyst
+    # do not need the optional SP500/yfinance stack at startup.
+    from decision_making.ml_model.ml_model_manager import get_model_manager
+
     agent_name = AgentKey.ML_MODEL_ONLINE
     ticker = state["ticker"]
     trading_date = state["trading_date"]

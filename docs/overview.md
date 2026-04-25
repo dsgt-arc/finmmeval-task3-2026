@@ -11,5 +11,5 @@ This folder contains the project documentation for the current repo layout.
 ## Archived Material
 
 - [docs/archive/README_ARCHIVE.md](./archive/README_ARCHIVE.md) for the old template README.
-- [docs/archive/CLAUDE.md](./archive/CLAUDE.md) for the old working-notes file.
+- [CLAUDE.md](../CLAUDE.md) for the active working-notes file.
 - [docs/archive/endpoint_instructions.md](./archive/endpoint_instructions.md) for the original endpoint instructions.

@@ -2,7 +2,7 @@
 
 This repository exposes a competition-style HTTP endpoint in `api/simple_trading_api.py`.
 The endpoint is designed to receive the same JSON payload that the organizers send,
-call the existing DeepFund workflow, and return exactly:
+call the existing DeepFund workflow, and return exactly one trading signal:
 
 ```json
 {"recommended_action": "BUY"}
@@ -47,6 +47,8 @@ The request flow is:
   - Validates the incoming JSON payload.
   - Exposes `/competition_action/`, `/trading_action/`, and `/health`.
   - Returns the response in the exact competition format.
+  - This endpoint only returns the 3-way signal, not portfolio allocations or
+    any secondary metrics.
 
 - `api/decision_bridge.py`
   - Orchestration layer.
@@ -163,5 +165,9 @@ If `make` is not installed, use the raw `uv run ...` commands shown above instea
 
 - The endpoint now accepts optional `news`, `10k`, and `10q` fields.
 - If `symbol` is missing, the API falls back to the symbol in the `price` map.
+- If the workflow bridge times out or fails at runtime, the bridge defaults the
+  response to `HOLD` to match the competition fallback rule.
+- The subprocess bridge uses a 170-second timeout so it stays safely under the
+  3-minute organizer limit.
 - The server uses the `PORT` environment variable if your hosting platform provides one.
 - For public deployment, you still need a stable HTTPS URL or container service.

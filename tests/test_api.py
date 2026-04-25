@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import subprocess
 import sys
 from pathlib import Path
 
@@ -138,3 +139,54 @@ def test_bridge_normalizes_worker_output(monkeypatch, tmp_path):
     )
 
     assert decision_bridge.recommend_action(payload) == "SELL"
+
+
+def test_bridge_defaults_to_hold_on_worker_failure(monkeypatch, tmp_path):
+    payload = {"date": "2026-03-19", "symbol": ["TSLA"], "price": {"TSLA": 380.3}}
+
+    class DummyResult:
+        returncode = 1
+        stdout = ""
+        stderr = "boom"
+
+    def fake_run(*args, **kwargs):
+        return DummyResult()
+
+    monkeypatch.setattr(decision_bridge.subprocess, "run", fake_run)
+    monkeypatch.setattr(
+        decision_bridge.tempfile,
+        "TemporaryDirectory",
+        lambda: type(
+            "TmpDir",
+            (),
+            {
+                "__enter__": lambda self: str(tmp_path),
+                "__exit__": lambda self, exc_type, exc, tb: None,
+            },
+        )(),
+    )
+
+    assert decision_bridge.recommend_action(payload) == "HOLD"
+
+
+def test_bridge_defaults_to_hold_on_timeout(monkeypatch, tmp_path):
+    payload = {"date": "2026-03-19", "symbol": ["TSLA"], "price": {"TSLA": 380.3}}
+
+    def fake_run(*args, **kwargs):
+        raise subprocess.TimeoutExpired(cmd=kwargs.get("args", "cmd"), timeout=170)
+
+    monkeypatch.setattr(decision_bridge.subprocess, "run", fake_run)
+    monkeypatch.setattr(
+        decision_bridge.tempfile,
+        "TemporaryDirectory",
+        lambda: type(
+            "TmpDir",
+            (),
+            {
+                "__enter__": lambda self: str(tmp_path),
+                "__exit__": lambda self, exc_type, exc, tb: None,
+            },
+        )(),
+    )
+
+    assert decision_bridge.recommend_action(payload) == "HOLD"
