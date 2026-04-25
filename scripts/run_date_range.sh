@@ -27,19 +27,34 @@
 
 set -e  # Exit on error
 
+# Raise file descriptor limit — online learning opens many files (yfinance SQLite
+# cache + parquet files) across ~500 SP500 tickers. macOS non-interactive shells
+# default to 256; 65536 matches typical interactive terminal sessions.
+ulimit -n 65536 2>/dev/null || ulimit -n 4096 2>/dev/null || true
+
+# Get the directory where this script is located
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
+
+# Change to project root
+cd "$PROJECT_ROOT"
+
+# Set PYTHONPATH
+export PYTHONPATH="$PROJECT_ROOT:$PROJECT_ROOT/decision_making"
+
 # Default config path
-CONFIG_PATH=${1:-"decision_making/config/dev.yaml"}
+CONFIG_PATH=${1:-"decision_making/config/dev_cne.yaml"}
 
 # If dates not provided, query from data
 if [ "$#" -eq 0 ] || [ "$#" -eq 1 ]; then
     echo "Querying available date range from data..."
 
     # Get min and max dates from data
-    DATES=$(python3 << EOF
+    DATES=$(python << EOF
 import sys
 import yaml
 from datetime import datetime, timedelta
-from decision_making.data import load_data
+from ama_data import load_data
 
 # Load config to get first ticker
 with open("$CONFIG_PATH") as f:
@@ -102,7 +117,7 @@ echo "Date range: $START_DATE to $END_DATE"
 echo ""
 
 # Use Python to generate and iterate dates (cross-platform)
-python3 << EOF
+python << EOF
 from datetime import datetime, timedelta
 import os
 import subprocess

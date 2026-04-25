@@ -301,8 +301,8 @@ class SQLiteDB(BaseDB):
             cursor.execute(
                 """
                 INSERT INTO signal (id, portfolio_id, updated_at, ticker, llm_prompt,
-                                  analyst, signal, justification)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                                  analyst, signal, justification, signal_strength)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
                 (
                     signal_id,
@@ -313,6 +313,7 @@ class SQLiteDB(BaseDB):
                     analyst,
                     str(signal.signal),
                     signal.justification,
+                    signal.signal_strength,
                 ),
             )
 
@@ -395,6 +396,46 @@ class SQLiteDB(BaseDB):
             return decisions
         except Exception as e:
             logger.warning(f"No decision memory found for {ticker} in {exp_name}: {e}")
+            return []
+        finally:
+            if conn:
+                conn.close()
+
+    def get_signal_history(self, exp_name: str, ticker: str, analyst: str, lookback_days: int = 10) -> list[dict]:
+        """Get historical signals for trend analysis."""
+        config_id = self.get_config_id_by_name(exp_name)
+        if not config_id:
+            return []
+
+        portfolio_ids = self.get_recent_portfolio_ids_by_config_id(config_id, lookback_days)
+        if not portfolio_ids:
+            return []
+
+        conn = None
+        try:
+            conn = self._get_connection()
+            cursor = conn.cursor()
+
+            placeholders = ",".join("?" * len(portfolio_ids))
+            query = f"""
+                SELECT signal, signal_strength, updated_at
+                FROM signal
+                WHERE portfolio_id IN ({placeholders})
+                  AND ticker = ?
+                  AND analyst = ?
+                ORDER BY updated_at DESC
+                LIMIT ?
+            """
+
+            params = [*portfolio_ids, ticker, analyst, lookback_days]
+            cursor.execute(query, params)
+
+            return [
+                {"signal": row["signal"], "signal_strength": row["signal_strength"], "updated_at": row["updated_at"]}
+                for row in cursor.fetchall()
+            ]
+        except Exception as e:
+            logger.warning(f"Error retrieving signal history: {e}")
             return []
         finally:
             if conn:

@@ -1,9 +1,8 @@
 import datetime
-import os
 from pathlib import Path
 
-import polars as pl
 from huggingface_hub import hf_hub_download
+import polars as pl
 
 # HuggingFace dataset configuration
 HF_DATASET_AMA = "TheFinAI/daily_news"  # data of the Agents Market Arena (AMA) with more assets
@@ -29,7 +28,6 @@ SPLITS_COMPETITION = {
 
 # Local data directory (at project root)
 DATA_DIR = Path(__file__).parent.parent / "data"
-DATA_DIR_COMPETITION = Path(__file__).parent.parent / "data"
 
 
 # Symbols for panel
@@ -108,7 +106,7 @@ def load_data(symbol: str, download_if_missing: bool = True, competition_data: b
     if competition_data:
         local_path = DATA_DIR / "data" / Path(SPLITS_COMPETITION[symbol]).name
     else:
-        local_path = DATA_DIR / "data_new" / Path(SPLITS_AMA[symbol]).name
+        local_path = DATA_DIR / "data_ana" / Path(SPLITS_AMA[symbol]).name
 
     # Download if file doesn't exist and download_if_missing is True
     if not local_path.exists() and download_if_missing:

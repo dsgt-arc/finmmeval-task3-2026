@@ -1,0 +1,24 @@
+# Deep Fund Configuration
+exp_name: "enhanced_tools_tsla"
+
+# Trading settings
+cashflow: 100000
+tickers:
+  - TSLA
+
+
+# Workflow execution mode
+sequential_mode: true  # false for parallel, true for sequential execution
+
+# Analysts to run, refer to graph.constants.py
+workflow_analysts:
+  #- dummy
+  #- technical
+  #- company_news
+  - company_news_enhanced
+  - ml_model_agent_online
+
+# LLM model settings, refer to llm/inference.py: LLMConfig
+llm:
+  provider: "OpenAI"
+  model: "gpt-4o-mini" # DeepSeek-V3

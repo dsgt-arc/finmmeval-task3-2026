@@ -2,9 +2,10 @@ from datetime import datetime
 import operator
 from typing import Annotated, Any
 
-from graph.constants import Action, Signal
 from pydantic import BaseModel, Field
 from typing_extensions import TypedDict
+
+from decision_making.graph.constants import Action, Signal
 
 
 class AnalystSignal(BaseModel):
@@ -21,6 +22,18 @@ class AnalystSignal(BaseModel):
         description="Model confidence in [0, 1] (section_news analyst only)", default=None, ge=0.0, le=1.0
     )
     horizon: str | None = Field(description="Investment horizon: short / medium / long (section_news analyst only)", default=None)
+
+    # Enhanced sentiment fields (optional for backward compatibility)
+    signal_strength: float | None = Field(
+        description="Sentiment strength from -1.0 (strong bearish) to +1.0 (strong bullish)", default=None, ge=-1.0, le=1.0
+    )
+
+
+class RelevanceCheck(BaseModel):
+    """Check if content is relevant for next-day price prediction"""
+
+    is_relevant: bool = Field(description="True if relevant for next-day price movement")
+    reasoning: str = Field(description="Brief explanation", default="")
 
 
 class Decision(BaseModel):

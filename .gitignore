@@ -179,7 +179,12 @@ data/
 
 # Sqlite
 *.db
-decision_making/database/
+
+data/
+*.json
+*.pkl
+*.csv
+*.png
 
 # Claude
 .claude
@@ -187,10 +192,5 @@ decision_making/database/
 # Backtest Results
 results/
 
-# Node / prettier
+# Node
 node_modules/
-package-lock.json
-
-# Benchmark output files
-benchmark_*.json
-benchmark_*.csv

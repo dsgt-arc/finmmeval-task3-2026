@@ -50,3 +50,7 @@ class BaseDB(ABC):
     @abstractmethod
     def get_decision_memory(self, exp_name: str, ticker: str, limit: int) -> list:
         pass
+
+    @abstractmethod
+    def get_signal_history(self, exp_name: str, ticker: str, analyst: str, lookback_days: int = 10) -> list:
+        pass

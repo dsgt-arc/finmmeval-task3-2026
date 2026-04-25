@@ -60,6 +60,58 @@ Here are recent news:
     + ANALYST_OUTPUT_FORMAT
 )
 
+RELEVANCE_CHECK_PROMPT = """
+You are screening news content to determine if it's relevant for predicting next-day asset price movements for {ticker}.
+
+Section: {topic}
+Content: {content}
+
+Determine if this section contains information that could impact tomorrow's asset price.
+
+Relevant content includes:
+- Financial results, earnings, revenue changes
+- Corporate actions (M&A, partnerships, executive changes)
+- Product launches, regulatory approvals, legal issues
+- Analyst ratings, price targets
+- Material business developments
+
+Provide:
+- is_relevant: true/false
+- reasoning: Brief explanation (1 shortsentence)
+"""
+
+COMPANY_NEWS_ENHANCED_PROMPT = """
+You are a financial analyst evaluating a {topic} report of asset {ticker} for its potential impact on next-day prices.
+
+Article Content:
+{content}
+
+Your task:
+1. Determine if this report could impact the asset's next-day price movement
+2. Assess sentiment: Bullish (positive for price), Bearish (negative), or Neutral
+3. Rate sentiment strength from -1.0 (very bearish) to +1.0 (very bullish)
+4. Estimate price impact potential (0.0 = unlikely to move price, 1.0 = major catalyst)
+
+Focus on price-moving events:
+✓ Earnings surprises, guidance changes, analyst upgrades/downgrades
+✓ Product launches, major partnerships, acquisitions
+✓ Regulatory actions, legal issues, safety concerns
+✓ Management changes, insider activity
+✓ Industry-specific catalysts affecting competitive position
+
+Ignore non-actionable content:
+✗ Generic industry news not specific to this company
+✗ Opinion pieces without new information
+✗ Minor operational updates unlikely to affect valuation
+
+Provide structured output:
+- signal: One of ["Bullish", "Bearish", "Neutral"]
+- strength: Float from -1.0 to +1.0 (magnitude of sentiment)
+- price_impact_potential: Float from 0.0 to 1.0 (likelihood of price movement)
+- reasoning: Brief explanation of why this could/couldn't impact next-day price
+- article_preview: First 50 characters of the article text
+"""
+
 
 MACROECONOMIC_PROMPT = (
     """
@@ -86,6 +138,22 @@ Here are the monetary policy:
     + ANALYST_OUTPUT_FORMAT
 )
 
+
+ML_MODEL_PROMPT = """
+You are a quantitative analyst evaluating a stock ticker using a machine learning model.
+
+The ML model (Random Forest trained on SP500 cross-sectional data with online learning) predicts
+the probability of a positive return for the next trading day.
+
+Ticker: {ticker}
+Predicted probability of positive return: {proba:.1%}
+Trading date: {trading_date}
+
+Provide structured output with the following fields:
+- signal: One of ["Bullish", "Bearish", "Neutral"]
+- justification: A brief explanation of your analysis
+- signal_strength: Float from -1.0 (strong bearish) to +1.0 (strong bullish) reflecting your conviction based on the predicted probability
+"""
 
 PORTFOLIO_PROMPT = """
 You are a portfolio manager making final trading decisions based on decision memory, and the provided optimal position ratio.

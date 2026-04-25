@@ -4,7 +4,6 @@ Performance metrics and analysis functions for DeepFund trading results.
 
 from datetime import datetime
 import json
-from typing import Optional
 
 import numpy as np
 import polars as pl
@@ -121,7 +120,7 @@ def calculate_sharpe_ratio(returns: pl.Series, risk_free_rate: float = 0.0, annu
     return sharpe
 
 
-def calculate_max_drawdown(portfolio_values: pl.Series) -> tuple[float, Optional[int], Optional[int]]:
+def calculate_max_drawdown(portfolio_values: pl.Series) -> tuple[float, int | None, int | None]:
     """
     Calculate maximum drawdown from portfolio value series.
 

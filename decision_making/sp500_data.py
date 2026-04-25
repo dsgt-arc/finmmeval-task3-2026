@@ -1,4 +1,5 @@
 from pathlib import Path
+import uuid
 
 import pandas as pd
 import yfinance as yf
@@ -6,7 +7,7 @@ import yfinance as yf
 SP500_SOURCE = "https://yfiua.github.io/index-constituents/constituents-sp500.csv"
 
 DATA_DIR = Path(__file__).parent.parent / "data" / "data_sp500"
-DATA_FILE = Path("stock_data_long.csv")
+DATA_FILE = Path("stock_data_long_test")  # partitioned Parquet directory (year=YYYY/data.parquet)
 
 
 def get_stock_data(symbols, start="2000-01-01", end=None, batch_size=100):
@@ -73,6 +74,30 @@ def get_stock_data(symbols, start="2000-01-01", end=None, batch_size=100):
 
     print(f"✓ Downloaded data for {data['Ticker'].nunique()} tickers")
     return data
+
+
+def fetch_sp500_adjclose_since(
+    tickers: list[str],
+    start_date: str,
+    end_date: str,
+) -> pd.DataFrame:
+    """Fetch adj close from yfinance for given tickers and date range.
+
+    Args:
+        tickers: List of ticker symbols
+        start_date: Start date string 'YYYY-MM-DD' (inclusive)
+        end_date: End date string 'YYYY-MM-DD' (inclusive)
+
+    Returns:
+        Wide-format DataFrame (datetime index x ticker columns) or empty DataFrame
+    """
+    raw = get_stock_data(tickers, start=start_date, end=end_date)
+    if raw.empty:
+        return pd.DataFrame()
+    wide = raw.pivot_table(index="Date", columns="Ticker", values="Adj_Close")
+    wide.index = pd.to_datetime(wide.index)
+    wide.index.name = "date"
+    return wide
 
 
 def get_sector(symbols, batch_size=10):
@@ -168,7 +193,8 @@ def load_stock_metric_long(metric_name: str, path: Path = DATA_DIR / DATA_FILE, 
     Returns:
         Wide-format DataFrame with date index and ticker columns
     """
-    df = pd.read_csv(path)
+    df = pd.read_parquet(path, columns=["Date", "Ticker", "Metric", "Value"])
+    df = df.drop_duplicates(subset=["Date", "Ticker", "Metric"], keep="last")
 
     # Filter for requested metric
     metric_df = df[df["Metric"] == metric_name].copy()
@@ -186,6 +212,54 @@ def load_stock_metric_long(metric_name: str, path: Path = DATA_DIR / DATA_FILE, 
 
     df_wide = df_wide[long_history_stocks].dropna(axis="index", how="all")
     return df_wide
+
+
+def save_to_partitioned_parquet(df: pd.DataFrame, path: Path = DATA_DIR / DATA_FILE) -> None:
+    """Write long-format DataFrame to year-partitioned Parquet directory.
+
+    Partitions by a 'year' column derived from 'Date'. Each partition is
+    written to ``path/year=YYYY/data.parquet``, overwriting any existing file
+    for that year.
+
+    Args:
+        df: Long-format DataFrame with columns [Ticker, Date, Metric, Value]
+        path: Root directory for the partitioned dataset
+    """
+    path.mkdir(parents=True, exist_ok=True)
+    df = df.copy()
+    df["year"] = pd.to_datetime(df["Date"]).dt.year
+    for year, year_df in df.groupby("year"):
+        year_dir = path / f"year={year}"
+        year_dir.mkdir(exist_ok=True)
+        year_df.drop(columns=["year"]).reset_index(drop=True).to_parquet(year_dir / "data.parquet", index=False)
+
+
+def append_adjclose_to_store(wide_df: pd.DataFrame, path: Path = DATA_DIR / DATA_FILE) -> None:
+    """Append new adj close data (wide format) into the year-partitioned Parquet store.
+
+    Converts wide_df (datetime index x ticker columns) to long format with
+    Metric='Adj_Close', then for each affected year reads only that year's
+    partition, merges, deduplicates, and writes back — without touching any
+    other year.
+
+    Args:
+        wide_df: Wide-format DataFrame (datetime index x ticker columns)
+        path: Root directory of the partitioned dataset
+    """
+    new_long = (
+        wide_df.reset_index()
+        .rename(columns={"date": "Date"})
+        .melt(id_vars=["Date"], var_name="Ticker", value_name="Value")
+        .assign(Metric="Adj_Close")
+        .dropna(subset=["Value"])
+    )
+    new_long["Date"] = pd.to_datetime(new_long["Date"]).dt.strftime("%Y-%m-%d")
+    new_long["year"] = pd.to_datetime(new_long["Date"]).dt.year
+
+    for year, year_df in new_long.groupby("year"):
+        year_dir = path / f"year={year}"
+        year_dir.mkdir(parents=True, exist_ok=True)
+        year_df.drop(columns=["year"]).reset_index(drop=True).to_parquet(year_dir / f"{uuid.uuid4()}.parquet", index=False)
 
 
 def load_stock_volatility(path: Path = DATA_DIR / DATA_FILE, min_obs: int = 400) -> pd.DataFrame:

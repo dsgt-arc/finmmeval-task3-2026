@@ -1,7 +1,14 @@
 from collections.abc import Callable
 from typing import ClassVar
 
-from agents.analysts import company_news_agent, dummy_agent, section_news_agent, technical_agent
+from agents.analysts import (
+    company_news_agent,
+    company_news_enhanced_agent,
+    dummy_agent,
+    ml_model_agent_online,
+    section_news_agent,
+    technical_agent,
+)
 from agents.portfolio_manager import portfolio_agent
 from graph.constants import AgentKey
 
@@ -23,6 +30,8 @@ class AgentRegistry:
         AgentKey.MACROECONOMIC,
         AgentKey.POLICY,
         AgentKey.DUMMY,
+        AgentKey.COMPANY_NEWS_ENHANCED,
+        AgentKey.ML_MODEL_ONLINE,
     ]
 
     @classmethod
@@ -90,4 +99,16 @@ class AgentRegistry:
             key=AgentKey.DUMMY,
             agent_func=dummy_agent,
             agent_doc="Dummy analyst for debugging - returns neutral signal with no analysis.",
+        )
+
+        cls.register_agent(
+            key=AgentKey.ML_MODEL_ONLINE,
+            agent_func=ml_model_agent_online,
+            agent_doc="ML analyst with cross-sectional online learning: updates model daily from full SP500 cross-section before predicting the competition ticker.",
+        )
+
+        cls.register_agent(
+            key=AgentKey.COMPANY_NEWS_ENHANCED,
+            agent_func=company_news_enhanced_agent,
+            agent_doc="Enhanced company news analyst with per-article analysis and trend tracking.",
         )
