@@ -10,7 +10,7 @@ from util.db_helper import get_db
 from util.logger import logger
 
 from decision_making.ama_data import load_specific_data
-from decision_making.ml_model.config import N_NEW_TREES_CROSS_SECTIONAL
+from decision_making.ml_model.config import ML_TICKER_PROXY, N_NEW_TREES_CROSS_SECTIONAL
 from decision_making.ml_model.feature_engineering_inference import (
     build_cross_sectional_features_for_date,
     build_single_stock_features,
@@ -147,12 +147,16 @@ def ml_model_agent_online(state: FundState):
     # --- Step 2: Predict for competition ticker ---
     prompt = ""
     try:
-        prices_df = _load_prices_for_inference(
-            ticker,
-            prev_date,
-            price_data,
-        )
-        features = build_single_stock_features(prices_df, ticker, manager.reference_data)
+        prices_df = _load_prices_for_inference(ticker, prev_date, price_data)
+        try:
+            features = build_single_stock_features(prices_df, ticker, manager.reference_data)
+        except ValueError:
+            proxy = ML_TICKER_PROXY.get(ticker)
+            if proxy is None:
+                raise
+            logger.info(f"[{agent_name}] Insufficient obs for {ticker}, using proxy {proxy}")
+            proxy_prices_df = _load_prices_for_inference(proxy, prev_date, price_data)
+            features = build_single_stock_features(proxy_prices_df, proxy, manager.reference_data)
 
         # Fill any feature columns missing from inference (e.g. sector_Unknown)
         for col in feature_names:
