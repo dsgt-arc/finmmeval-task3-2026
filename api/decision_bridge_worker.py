@@ -33,7 +33,7 @@ def _load_payload(path: Path) -> dict:
 
 
 def _load_base_config() -> dict:
-    config_path = Path(os.getenv("DECISION_BRIDGE_CONFIG", REPO_ROOT / "decision_making" / "config" / "dev.yaml"))
+    config_path = Path(os.getenv("DECISION_BRIDGE_CONFIG", REPO_ROOT / "decision_making" / "config" / "api.yaml"))
     with config_path.open("r", encoding="utf-8") as handle:
         return yaml.safe_load(handle)
 

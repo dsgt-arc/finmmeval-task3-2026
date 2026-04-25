@@ -72,6 +72,9 @@ The expected endpoint shape is:
 - Those optional context fields can also be omitted or set to `null` on sparse days.
 - We added regression tests for TSLA with filings present and BTC with `10k` / `10q` set to `null`.
 - If `symbol` is missing, the API falls back to the key in `price`.
+- The API uses [decision_making/config/api.yaml](./decision_making/config/api.yaml) by default.
+  Edit that file directly to change the deployed analyst workflow, or set
+  `DECISION_BRIDGE_CONFIG` to point at a different YAML file.
 - If the workflow bridge times out or fails, the API defaults to `HOLD`.
 - The subprocess bridge uses a 170-second timeout so it stays safely under the
   3-minute organizer limit.
