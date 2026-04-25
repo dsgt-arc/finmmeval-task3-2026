@@ -7,7 +7,7 @@ import yfinance as yf
 SP500_SOURCE = "https://yfiua.github.io/index-constituents/constituents-sp500.csv"
 
 DATA_DIR = Path(__file__).parent.parent / "data" / "data_sp500"
-DATA_FILE = Path("stock_data_long_test")  # partitioned Parquet directory (year=YYYY/data.parquet)
+DATA_FILE = Path("stock_data_long")  # partitioned Parquet directory (year=YYYY/data.parquet)
 
 
 def get_stock_data(symbols, start="2000-01-01", end=None, batch_size=100):
