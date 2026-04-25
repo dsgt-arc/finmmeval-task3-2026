@@ -4,7 +4,7 @@ Separation of concerns:
 - Validates the organizer payload and exposes the HTTP endpoints.
 - Does not contain trading logic.
 - Calls `api.decision_bridge.recommend_action(payload)` and returns the
-  exact competition response shape.
+  exact competition response shape for the Task 3 signal-only endpoint.
 - Keeps the transport layer small so the deployment is easy to reason about.
 """
 
@@ -80,7 +80,7 @@ async def health():
 
 def _recommend_action_payload(request: TradingRequest) -> dict:
     payload = _payload_for_bridge(request)
-    # The bridge returns the action from the existing workflow.
+    # The bridge returns the final 3-way signal from the existing workflow.
     action = recommend_action(payload)
     return {"recommended_action": _normalize_action(action)}
 
