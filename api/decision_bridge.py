@@ -40,7 +40,7 @@ def _build_worker_env(db_path: Path) -> dict[str, str]:
         pythonpath_parts.append(env["PYTHONPATH"])
     env["PYTHONPATH"] = os.pathsep.join(pythonpath_parts)
     env["DB_PATH"] = str(db_path)
-    env.setdefault("DECISION_BRIDGE_CONFIG", str(repo_root / "decision_making" / "config" / "dev.yaml"))
+    env.setdefault("DECISION_BRIDGE_CONFIG", str(repo_root / "decision_making" / "config" / "api.yaml"))
     env.setdefault("DECISION_BRIDGE_EXP_NAME", "api_endpoint")
     return env
 

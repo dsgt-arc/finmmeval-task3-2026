@@ -19,6 +19,11 @@ uv sync
 If you have not created one yet, copy [.env.example](../.env.example) to `.env`
 and set `OPENAI_API_KEY` so the default workflow can reach OpenAI.
 
+The API uses [decision_making/config/api.yaml](../decision_making/config/api.yaml)
+by default. That file is the deployment default. To change the deployed analyst
+mix, edit the YAML directly or override `DECISION_BRIDGE_CONFIG` locally or in
+your hosting platform.
+
 ## Prerequisites
 
 - `make api-test` only needs the source code and the installed Python environment.
@@ -49,6 +54,8 @@ The request flow is:
   - Returns the response in the exact competition format.
   - This endpoint only returns the 3-way signal, not portfolio allocations or
     any secondary metrics.
+  - Optional context fields like `news`, `10k`, and `10q` may be omitted or
+    set to `null` on sparse days.
 
 - `api/decision_bridge.py`
   - Orchestration layer.
@@ -59,6 +66,7 @@ The request flow is:
   - Workflow execution layer.
   - Runs the existing `decision_making` code without changing it.
   - Uses a temporary SQLite DB so each request is isolated.
+  - Loads the API workflow from `decision_making/config/api.yaml` by default.
 
 ## Reading The Tests
 
@@ -171,3 +179,16 @@ If `make` is not installed, use the raw `uv run ...` commands shown above instea
   3-minute organizer limit.
 - The server uses the `PORT` environment variable if your hosting platform provides one.
 - For public deployment, you still need a stable HTTPS URL or container service.
+
+## Robustness Notes
+
+- The request model accepts sparse context on a per-symbol basis, including
+  `news`, `momentum`, `10k`, `10q`, and `history_price` entries that may be
+  missing or `null` on a given day.
+- The default analyst mix is defined in `decision_making/config/api.yaml`.
+  That file currently runs `technical` and `company_news`.
+- We added regression coverage for the common organizer cases:
+  - TSLA with populated `10k` and `10q`
+  - BTC with `10k = null` and `10q = null`
+- The integration tests exercise the real bridge and workflow path, not just the
+  HTTP wrapper, so these cases are covered end to end.
