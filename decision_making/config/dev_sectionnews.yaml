@@ -1,5 +1,5 @@
-# Deep Fund Configuration
-exp_name: "dev"
+# Deep Fund Configuration — section_news analyst test
+exp_name: "dev_sectionnews"
 
 # Trading settings
 cashflow: 100000
@@ -11,14 +11,12 @@ tickers:
 sequential_mode: false # false for parallel, true for sequential execution
 
 # Analysts to run, refer to graph.constants.py
-# To enable section-aware news analysis, replace "company_news" with "section_news"
+# section_news replaces company_news; technical provides price-based signals
 workflow_analysts:
-  #- dummy
   - technical
-  - company_news
-  #- section_news  # multi-section news analyst (replaces company_news)
+  - section_news
 
 # LLM model settings, refer to llm/inference.py: LLMConfig
 llm:
   provider: "OpenAI"
-  model: "gpt-4o-mini" # DeepSeek-V3
+  model: "gpt-4o-mini"

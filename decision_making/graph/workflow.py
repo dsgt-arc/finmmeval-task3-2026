@@ -35,6 +35,7 @@ class AgentWorkflow:
         # Initialize workflow configuration
         self.planner_mode = config.get("planner_mode", False)
         self.sequential_mode = config.get("sequential_mode", False)
+        self.api_payload = config.get("api_payload")
 
         # Verify workflow analysts
         if not config.get("workflow_analysts"):
@@ -115,6 +116,7 @@ class AgentWorkflow:
                 llm_config=self.llm_config,
                 portfolio=portfolio,
                 num_tickers=len(self.tickers),
+                api_payload=self.api_payload,
             )
 
             # build the workflow
@@ -124,7 +126,7 @@ class AgentWorkflow:
                 final_state = workflow.invoke(state)
             except Exception as e:
                 logger.error(f"Error running deep fund: {e}")
-                raise RuntimeError(f"Failed to generate new portfolio {portfolio.id}")
+                raise RuntimeError(f"Failed to generate new portfolio {portfolio.id}") from e
 
             # update portfolio
             portfolio = self.update_portfolio_ticker(portfolio, ticker, final_state["decision"])

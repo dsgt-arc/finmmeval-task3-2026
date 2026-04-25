@@ -1,6 +1,14 @@
 from collections.abc import Callable
+from typing import ClassVar
 
-from agents.analysts import *
+from agents.analysts import (
+    company_news_agent,
+    company_news_enhanced_agent,
+    dummy_agent,
+    ml_model_agent_online,
+    section_news_agent,
+    technical_agent,
+)
 from agents.portfolio_manager import portfolio_agent
 from graph.constants import AgentKey
 
@@ -9,15 +17,16 @@ class AgentRegistry:
     """Registry for all agents."""
 
     # Initialize as actual dictionaries, not just type annotations
-    agent_func_mapping: dict[str, Callable] = {}
-    agent_doc_mapping: dict[str, str] = {}
+    agent_func_mapping: ClassVar[dict[str, Callable]] = {}
+    agent_doc_mapping: ClassVar[dict[str, str]] = {}
 
     # Analyst KEYs
-    ANALYST_KEYS = [
+    ANALYST_KEYS: ClassVar[list[str]] = [
         AgentKey.TECHNICAL,
         AgentKey.FUNDAMENTAL,
         AgentKey.INSIDER,
         AgentKey.COMPANY_NEWS,
+        AgentKey.SECTION_NEWS,
         AgentKey.MACROECONOMIC,
         AgentKey.POLICY,
         AgentKey.DUMMY,
@@ -78,6 +87,12 @@ class AgentRegistry:
             key=AgentKey.TECHNICAL,
             agent_func=technical_agent,
             agent_doc="Technical analysis specialist using multiple technical analysis strategies.",
+        )
+
+        cls.register_agent(
+            key=AgentKey.SECTION_NEWS,
+            agent_func=section_news_agent,
+            agent_doc="Section-aware news analyst that classifies news into categories and scores each independently.",
         )
 
         cls.register_agent(

@@ -291,7 +291,7 @@ class SQLiteDB(BaseDB):
                 conn.close()
 
     def save_signal(self, portfolio_id: str, analyst: str, ticker: str, prompt: str, signal: AnalystSignal) -> str | None:
-        """Save a new signal with optional signal_strength fields."""
+        """Save a new signal."""
         conn = None
         try:
             conn = self._get_connection()
@@ -381,7 +381,7 @@ class SQLiteDB(BaseDB):
             """
 
             # Combine portfolio_ids and ticker into parameters
-            params = portfolio_ids + [ticker]
+            params = [*portfolio_ids, ticker]
             cursor.execute(query, params)
 
             decisions = []
@@ -427,7 +427,7 @@ class SQLiteDB(BaseDB):
                 LIMIT ?
             """
 
-            params = portfolio_ids + [ticker, analyst, lookback_days]
+            params = [*portfolio_ids, ticker, analyst, lookback_days]
             cursor.execute(query, params)
 
             return [

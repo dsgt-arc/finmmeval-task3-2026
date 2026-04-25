@@ -179,8 +179,18 @@ data/
 
 # Sqlite
 *.db
+
 data/
 *.json
 *.pkl
 *.csv
 *.png
+
+# Claude
+.claude
+
+# Backtest Results
+results/
+
+# Node
+node_modules/

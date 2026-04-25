@@ -16,6 +16,13 @@ class AnalystSignal(BaseModel):
     )
     justification: str = Field(description="Brief explanation for the signal", default="No justification provided due to error")
 
+    # Per-section fields populated only by the section_news analyst.
+    section: str | None = Field(description="News section this signal covers (section_news analyst only)", default=None)
+    confidence: float | None = Field(
+        description="Model confidence in [0, 1] (section_news analyst only)", default=None, ge=0.0, le=1.0
+    )
+    horizon: str | None = Field(description="Investment horizon: short / medium / long (section_news analyst only)", default=None)
+
     # Enhanced sentiment fields (optional for backward compatibility)
     signal_strength: float | None = Field(
         description="Sentiment strength from -1.0 (strong bearish) to +1.0 (strong bullish)", default=None, ge=-1.0, le=1.0
@@ -75,6 +82,9 @@ class FundState(TypedDict):
     llm_config: dict[str, Any] = Field(description="LLM configuration.")
     portfolio: Portfolio = Field(description="Portfolio for the fund.")
     num_tickers: int = Field(description="Number of tickers in the fund.")
+
+    # raw competition API payload (or None during backtests); analysts pull what they need
+    api_payload: dict | None
 
     # updated by workflow
     # ticker -> signal of all analysts

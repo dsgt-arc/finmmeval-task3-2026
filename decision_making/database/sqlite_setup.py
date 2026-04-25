@@ -8,8 +8,8 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # Ensure database directory exists
-DB_PATH = os.getenv("DB_PATH", str(Path(__file__).resolve().parent / "deepfund.sqlite3"))
-os.makedirs(os.path.dirname(DB_PATH), exist_ok=True)
+DB_PATH = os.getenv("DB_PATH") or str(Path(__file__).resolve().parent / "deepfund.sqlite3")
+Path(DB_PATH).parent.mkdir(parents=True, exist_ok=True)
 
 
 def init_database():
