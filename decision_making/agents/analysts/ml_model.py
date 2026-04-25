@@ -20,11 +20,15 @@ from decision_making.ml_model.ml_model_manager import get_model_manager
 """ML analyst using Random Forest trained on SP500 data."""
 
 
-def _prev_business_day(date):
-    date -= datetime.timedelta(days=1)
-    while date.weekday() >= 5:  # 5 = Saturday, 6 = Sunday
-        date -= datetime.timedelta(days=1)
-    return date
+def _prev_trading_day(date: datetime.date) -> datetime.datetime:
+    """Return the most recent NYSE trading day strictly before date."""
+    import pandas_market_calendars as mcal
+    nyse = mcal.get_calendar("NYSE")
+    # Look back up to 10 calendar days to find the previous session
+    start = (date - datetime.timedelta(days=10)).strftime("%Y-%m-%d")
+    end = (date - datetime.timedelta(days=1)).strftime("%Y-%m-%d")
+    schedule = nyse.schedule(start_date=start, end_date=end)
+    return datetime.datetime.combine(schedule.index[-1].date(), datetime.time.min)
 
 
 def _load_prices_for_inference(ticker: str, date, adj_close_wide) -> pl.DataFrame:
@@ -82,7 +86,7 @@ def ml_model_agent_online(state: FundState):
     trading_date = state["trading_date"]
     llm_config = state["llm_config"]
     portfolio_id = state["portfolio"].id
-    prev_date = trading_date - datetime.timedelta(days=1)
+    prev_date = _prev_trading_day(trading_date)
 
     # Get db instance
     db = get_db()
@@ -91,14 +95,19 @@ def ml_model_agent_online(state: FundState):
     feature_names = manager.metadata["feature_names"]
     last_train_date = manager.reference_data["last_obs_date"]
     last_train_date = datetime.datetime.strptime(last_train_date, "%Y-%m-%d")
-    price_data = None  # populated in Step 1, reused in Step 2
+    # Always load price_data — needed for Step 2 inference even when cross-sectional
+    # learning is skipped (e.g. second ticker in the same run).
+    try:
+        price_data = manager.get_data(through_date=prev_date)
+    except Exception as e:
+        logger.warning(f"Failed to load SP500 price data: {e}")
+        price_data = None
 
     # --- Step 1: Cross-sectional online learning from previous day ---
     if last_train_date >= trading_date:
         logger.info(f"Model already trained through {trading_date}, skipping online learning")
-    else:
+    elif price_data is not None:
         try:
-            price_data = manager.get_data(through_date=prev_date)
 
             # Check that the previous day falls within the SP500 data range
             available_dates = price_data.index[price_data.index <= prev_date]
@@ -137,6 +146,9 @@ def ml_model_agent_online(state: FundState):
                         X_batch = cs_df[feature_names].values
                         y_batch = cs_df["target"].values.astype(int)
                         manager.cross_sectional_retrain(X_batch, y_batch, n_new_trees=N_NEW_TREES_CROSS_SECTIONAL)
+                        # Mark this trading date as trained so other tickers in the same
+                        # run skip cross-sectional learning (avoids duplicate retraining).
+                        manager.reference_data["last_obs_date"] = trading_date.strftime("%Y-%m-%d")
                         logger.info(f"Online-learned from {len(X_batch)} SP500 stocks for {prev_date}")
             else:
                 logger.warning(f"SP500 data does not cover {prev_date}, skipping cross-sectional learning")
