@@ -11,6 +11,6 @@ def dummy_agent(state: FundState):
 
     # Get db instance
     db = get_db()
-    db.save_signal(state["portfolio"].id, AgentKey.DUMMY, state["ticker"], "DUMMY", signal)
+    db.save_signal(state["portfolio_id"], AgentKey.DUMMY, state["ticker"], "DUMMY", signal)
 
     return {"analyst_signals": [signal]}

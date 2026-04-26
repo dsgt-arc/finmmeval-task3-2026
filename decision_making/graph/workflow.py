@@ -4,7 +4,7 @@ from typing import Any
 from agents.planner import planner_agent
 from agents.registry import AgentRegistry
 from graph.constants import AgentKey
-from graph.schema import Action, Decision, FundState, Portfolio, Position
+from graph.schema import FundState
 from langgraph.graph import END, START, StateGraph
 from util.db_helper import get_db
 from util.logger import logger
@@ -20,28 +20,20 @@ class AgentWorkflow:
         self.trading_date = config["trading_date"]
         self.db = get_db()
 
-        # load latest portfolio from DB
-        portfolio = self.db.get_latest_portfolio(config_id)
-        if not portfolio:
-            portfolio = self.db.create_portfolio(config_id, config["cashflow"], config["trading_date"])
-            if not portfolio:
-                raise RuntimeError(f"Failed to create portfolio for config {self.exp_name}")
+        # Create a portfolio stub per run — serves only as FK anchor for decision/signal rows
+        portfolio_id = self.db.create_portfolio_stub(config_id, config["trading_date"])
+        if not portfolio_id:
+            raise RuntimeError(f"Failed to create portfolio stub for config {self.exp_name}")
+        self.portfolio_id = portfolio_id
+        logger.info(f"Portfolio stub ID: {self.portfolio_id}")
 
-        # copy portfolio with a new id
-        new_portfolio = self.db.copy_portfolio(config_id, portfolio, config["trading_date"])
-        self.init_portfolio = Portfolio(**new_portfolio)
-        logger.info(f"New portfolio ID: {self.init_portfolio.id}")
-
-        # Initialize workflow configuration
         self.planner_mode = config.get("planner_mode", False)
         self.sequential_mode = config.get("sequential_mode", False)
         self.api_payload = config.get("api_payload")
 
-        # Verify workflow analysts
         if not config.get("workflow_analysts"):
             raise ValueError("workflow_analysts must be provided in config")
 
-        # Validate analysts and remove invalid ones
         self.workflow_analysts = config["workflow_analysts"]
         invalid_analysts = [a for a in self.workflow_analysts if not AgentRegistry.check_agent_key(a)]
         if invalid_analysts:
@@ -52,42 +44,32 @@ class AgentWorkflow:
             raise ValueError("No valid analysts remaining after validation")
 
     def build(self) -> StateGraph:
-        """Build the workflow"""
+        """Build the workflow."""
         graph = StateGraph(FundState)
 
-        # create node for portfolio manager
         portfolio_agent = AgentRegistry.get_agent_func_by_key(AgentKey.PORTFOLIO)
         graph.add_node(AgentKey.PORTFOLIO, portfolio_agent)
 
         prev_node = START
         if self.sequential_mode:
-            # Sequential execution: chain analysts in config order
             for analyst in self.current_analysts:
                 agent_func = AgentRegistry.get_agent_func_by_key(analyst)
                 graph.add_node(analyst, agent_func)
                 graph.add_edge(prev_node, analyst)
-                prev_node = analyst  # overwrite prev_node to create a chain
+                prev_node = analyst
             graph.add_edge(prev_node, AgentKey.PORTFOLIO)
         else:
-            # Parallel execution (does not overwrite prev_node)
             for analyst in self.current_analysts:
                 agent_func = AgentRegistry.get_agent_func_by_key(analyst)
                 graph.add_node(analyst, agent_func)
                 graph.add_edge(prev_node, analyst)
                 graph.add_edge(analyst, AgentKey.PORTFOLIO)
 
-        # Route portfolio manager to end
         graph.add_edge(AgentKey.PORTFOLIO, END)
-        workflow = graph.compile()
-
-        return workflow
+        return graph.compile()
 
     def load_analysts(self, ticker: str):
-        """
-        Load the analysts for processing:
-        - If planner_mode is True: use planner to select from verified workflow_analysts
-        - If planner_mode is False: use all verified workflow_analysts
-        """
+        """Load analysts for the current ticker."""
         if self.planner_mode:
             logger.info("Using planner agent to select analysts from verified list")
             self.current_analysts = planner_agent(ticker, self.llm_config, self.workflow_analysts)
@@ -103,75 +85,31 @@ class AgentWorkflow:
         """Run the workflow."""
         start_time = perf_counter()
 
-        # will be updated by the output of workflow
-        portfolio = self.init_portfolio
         for ticker in self.tickers:
             self.load_analysts(ticker)
 
-            # init FundState
             state = FundState(
                 ticker=ticker,
                 exp_name=self.exp_name,
                 trading_date=self.trading_date,
                 llm_config=self.llm_config,
-                portfolio=portfolio,
-                num_tickers=len(self.tickers),
+                portfolio_id=self.portfolio_id,
                 api_payload=self.api_payload,
             )
 
-            # build the workflow
             workflow = self.build()
             logger.info(f"{ticker} workflow compiled successfully")
             try:
                 final_state = workflow.invoke(state)
             except Exception as e:
-                logger.error(f"Error running deep fund: {e}")
-                raise RuntimeError(f"Failed to generate new portfolio {portfolio.id}") from e
+                logger.error(f"Error running workflow: {e}")
+                raise RuntimeError(f"Failed to run workflow for {ticker}") from e
 
-            # update portfolio
-            portfolio = self.update_portfolio_ticker(portfolio, ticker, final_state["decision"])
-            logger.log_portfolio(f"{ticker} position update", portfolio)
+            decision = final_state["decision"]
+            self.db.save_decision(self.portfolio_id, ticker, "market_timing", decision, self.trading_date)
 
             if self.planner_mode:
-                self.current_analysts = None  # clean and reset current_analysts
-
-        logger.log_portfolio("Final Portfolio", portfolio)
-        logger.info("Updating portfolio to Database")
-        portfolio_dict = portfolio.model_dump()
-        self.db.update_portfolio(config_id, portfolio_dict, self.trading_date)
+                self.current_analysts = None
 
         end_time = perf_counter()
-        time_cost = end_time - start_time
-
-        return time_cost
-
-    def update_portfolio_ticker(self, portfolio: Portfolio, ticker: str, decision: Decision) -> Portfolio:
-        """Update the ticker asset in the portfolio."""
-
-        action = decision.action
-        shares = decision.shares
-        price = decision.price
-
-        if ticker not in portfolio.positions:
-            portfolio.positions[ticker] = Position(shares=0, value=0)
-
-        if action == Action.BUY:
-            portfolio.positions[ticker].shares += shares
-            portfolio.cashflow -= price * shares
-        elif action == Action.SELL:
-            total_portfolio_value = portfolio.cashflow + sum(
-                pos.value for pos in portfolio.positions.values()
-            )
-            max_short = int(max(0, total_portfolio_value) // price)
-            max_sell = portfolio.positions[ticker].shares + max_short
-            actual_sell = min(shares, max(0, max_sell))
-            portfolio.positions[ticker].shares -= actual_sell
-            portfolio.cashflow += price * actual_sell
-
-        # Always recalculate position value with latest price
-        portfolio.positions[ticker].value = round(price * portfolio.positions[ticker].shares, 2)
-
-        # round cashflow
-        portfolio.cashflow = round(portfolio.cashflow, 2)
-
-        return portfolio
+        return end_time - start_time

@@ -67,7 +67,7 @@ def section_news_agent(state: FundState):
     agent_name = AgentKey.SECTION_NEWS
     ticker = state["ticker"]
     llm_config = state["llm_config"]
-    portfolio_id = state["portfolio"].id
+    portfolio_id = state["portfolio_id"]
 
     db = get_db()
 

@@ -154,7 +154,7 @@ def company_news_enhanced_agent(state: FundState):
     ticker = state["ticker"]
     trading_date = state["trading_date"]
     llm_config = state["llm_config"]
-    portfolio_id = state["portfolio"].id
+    portfolio_id = state["portfolio_id"]
     exp_name = state["exp_name"]
     db = get_db()
 

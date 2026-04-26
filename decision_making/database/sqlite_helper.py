@@ -121,37 +121,8 @@ class SQLiteDB(BaseDB):
             if conn:
                 conn.close()
 
-    def get_latest_portfolio(self, config_id: str) -> dict | None:
-        """Get the latest portfolio for a config."""
-        conn = None
-        try:
-            conn = self._get_connection()
-            cursor = conn.cursor()
-
-            cursor.execute(
-                """
-                SELECT * FROM portfolio
-                WHERE config_id = ? AND trading_date IS NOT NULL
-                ORDER BY updated_at DESC
-                LIMIT 1
-            """,
-                (config_id,),
-            )
-
-            row = cursor.fetchone()
-
-            if row:
-                return {"id": row["id"], "cashflow": row["cashflow"], "positions": json.loads(row["positions"])}
-            return None
-        except Exception as e:
-            logger.error(f"Portfolio not found: {e}")
-            return None
-        finally:
-            if conn:
-                conn.close()
-
-    def create_portfolio(self, config_id: str, cashflow: float, trading_date: datetime) -> dict | None:
-        """Create a new portfolio."""
+    def create_portfolio_stub(self, config_id: str, trading_date: datetime) -> str | None:
+        """Create a stub portfolio row used only as an FK anchor for decision/signal rows."""
         conn = None
         try:
             conn = self._get_connection()
@@ -166,87 +137,19 @@ class SQLiteDB(BaseDB):
                 (
                     portfolio_id,
                     config_id,
-                    datetime.now(UTC).isoformat(),  # UTC time
+                    datetime.now(UTC).isoformat(),
                     trading_date.isoformat(),
-                    cashflow,
-                    cashflow,
+                    0.0,
+                    0.0,
                     json.dumps({}),
                 ),
             )
 
             conn.commit()
-            return {"id": portfolio_id, "cashflow": cashflow, "total_assets": cashflow, "positions": {}}
+            return portfolio_id
         except Exception as e:
-            logger.error(f"Error creating portfolio: {e}")
+            logger.error(f"Error creating portfolio stub: {e}")
             return None
-        finally:
-            if conn:
-                conn.close()
-
-    def copy_portfolio(self, config_id: str, portfolio: dict, trading_date: datetime) -> dict | None:
-        """Copy a portfolio."""
-        conn = None
-        try:
-            conn = self._get_connection()
-            cursor = conn.cursor()
-
-            portfolio_id = str(uuid.uuid4())
-            total_assets = portfolio["cashflow"] + sum(position["value"] for position in portfolio["positions"].values())
-            cursor.execute(
-                """
-                INSERT INTO portfolio (id, config_id, updated_at, trading_date, cashflow, total_assets, positions)
-                VALUES (?, ?, ?, ?, ?, ?, ?)
-            """,
-                (
-                    portfolio_id,
-                    config_id,
-                    datetime.now(UTC).isoformat(),  # UTC time
-                    trading_date.isoformat(),
-                    portfolio["cashflow"],
-                    total_assets,
-                    json.dumps(portfolio["positions"]),
-                ),
-            )
-
-            conn.commit()
-            return {"id": portfolio_id, "cashflow": portfolio["cashflow"], "positions": portfolio["positions"]}
-        except Exception as e:
-            logger.error(f"Error copying portfolio: {e}")
-            return None
-        finally:
-            if conn:
-                conn.close()
-
-    def update_portfolio(self, config_id: str, portfolio: dict, trading_date: datetime) -> bool:
-        """update portfolio."""
-        conn = None
-        try:
-            conn = self._get_connection()
-            cursor = conn.cursor()
-            total_assets = portfolio["cashflow"] + sum(position["value"] for position in portfolio["positions"].values())
-
-            cursor.execute(
-                """
-                UPDATE portfolio
-                SET config_id = ?, updated_at = ?, trading_date = ?, cashflow = ?, total_assets = ?, positions = ?
-                WHERE id = ?
-            """,
-                (
-                    config_id,
-                    datetime.now(UTC).isoformat(),  # UTC time
-                    trading_date.isoformat(),
-                    portfolio["cashflow"],
-                    total_assets,
-                    json.dumps(portfolio["positions"]),
-                    portfolio["id"],
-                ),
-            )
-
-            conn.commit()
-            return True
-        except Exception as e:
-            logger.error(f"Error updating portfolio: {e}")
-            return False
         finally:
             if conn:
                 conn.close()
@@ -389,7 +292,6 @@ class SQLiteDB(BaseDB):
                 decisions.append({
                     "trading_date": row["trading_date"],
                     "action": row["action"],
-                    "shares": row["shares"],
                     "price": row["price"],
                 })
 

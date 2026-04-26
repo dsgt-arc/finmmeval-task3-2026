@@ -52,20 +52,8 @@ class Position(BaseModel):
     shares: int = Field(default=0, description="Shares for the position.")
 
 
-class PositionRisk(BaseModel):
-    """Risk assessment for a single ticker"""
-
-    optimal_position_ratio: float = Field(
-        description="The optimal ratio of the position value to the total portfolio value", default=0.0
-    )
-    justification: str = Field(
-        description="Detailed risk assessment rationale explaining the recommendations",
-        default="No assessment provided due to insufficient data",
-    )
-
-
 class Portfolio(BaseModel):
-    """Portfolio state when running the workflow."""
+    """Portfolio state — kept for DB stub creation in workflow."""
 
     id: str = Field(description="Portfolio id.")
     cashflow: float = Field(description="Cashflow for the fund.")
@@ -80,8 +68,7 @@ class FundState(TypedDict):
     trading_date: datetime = Field(description="Trading date.")
     ticker: str = Field(description="Ticker in-the-flow.")
     llm_config: dict[str, Any] = Field(description="LLM configuration.")
-    portfolio: Portfolio = Field(description="Portfolio for the fund.")
-    num_tickers: int = Field(description="Number of tickers in the fund.")
+    portfolio_id: str = Field(description="Portfolio stub id (FK anchor for DB logging).")
 
     # raw competition API payload (or None during backtests); analysts pull what they need
     api_payload: dict | None

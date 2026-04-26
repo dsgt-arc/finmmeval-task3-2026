@@ -155,27 +155,30 @@ Provide structured output with the following fields:
 - signal_strength: Float from -1.0 (strong bearish) to +1.0 (strong bullish) reflecting your conviction based on the predicted probability
 """
 
-PORTFOLIO_PROMPT = """
-You are a portfolio manager making final trading decisions based on decision memory, and the provided optimal position ratio.
+MARKET_TIMING_PROMPT = """
+You are a market timing agent. Based on analyst signals and recent decision history,
+decide whether to be LONG (Buy), SHORT (Sell), or NEUTRAL (Hold) on {ticker}.
 
-Here is the decision memory:
+Analyst signals:
+{analyst_signals}
+
+Signal balance: {signal_balance} (positive = net bullish, negative = net bearish)
+
+Recent decision history:
 {decision_memory}
 
-Current Price: {current_price}
-Holding Shares: {current_shares}
-Tradable Shares: {tradable_shares}
+Current price: {current_price}
 
-If the value of tradable shares is positive, you can buy more shares.
-If the value of tradable shares is negative, you can sell some shares.
-If the value of tradable shares is close to 0, you can hold.
+Decision rules:
+- When the signal balance is clearly positive (≥ +1), prefer Buy.
+- When the signal balance is clearly negative (≤ -1), prefer Sell.
+- Reserve Hold only when signals are genuinely split (balance near 0 with conflicting rationales).
 
 You must provide your decision as a structured output with the following fields:
 - action: One of ["Buy", "Sell", "Hold"]
-- shares: Number of shares to buy or sell, set 0 for hold
+- shares: Set to 1 for Buy or Sell, 0 for Hold
 - price: The current price of the ticker
 - justification: A brief explanation of your decision
-
-Your response should be well-reasoned and consider all aspects of the analysis.
 """
 
 PLANNER_PROMPT = """
@@ -236,23 +239,3 @@ You must provide your analysis as a structured output with the following fields:
 - justification: A brief explanation summarising the section signals and your reasoning
 """
 
-RISK_CONTROL_PROMPT = """
-You are a professional risk control analyst.
-Please evaluate the risk of the ticker and set the optimal position ratio based on analyst signals and portfolio state.
-
-Here are the analyst signals:
-{ticker_signals}
-
-Here is the portfolio state:
-{portfolio}
-
-The position ratio range:  [0, {max_position_ratio}], the minimum step is 0.05.
-If you observe more bullish signals, you can set a larger position ratio.
-If you observe more bearish signals, you can set a smaller position ratio.
-
-You must provide your control recommendation as a structured output with the following fields:
-- optimal_position_ratio: The optimal ratio of the position value to the total portfolio value
-- justification: A brief explanation of your recommendation
-
-Your response should be well-reasoned and consider all aspects of the analysis.
-"""
