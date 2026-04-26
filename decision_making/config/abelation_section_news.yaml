@@ -1,0 +1,26 @@
+# Deep Fund Configuration
+exp_name: "abelation_section_news"
+
+# Trading settings
+cashflow: 100000
+tickers:
+  - TSLA
+  - BTC
+
+# Workflow execution mode
+sequential_mode: false # false for parallel, true for sequential execution
+
+# Analysts to run, refer to graph.constants.py
+workflow_analysts:
+  #- dummy
+  - technical
+  #- company_news
+  - section_news
+  # - company_news_enhanced
+  # - ml_model_agent_online
+
+# LLM model settings, refer to llm/inference.py: LLMConfig
+llm:
+  provider: "OpenAI"
+  model: "gpt-4o-mini" # DeepSeek-V3
+  temperature: 0
