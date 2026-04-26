@@ -24,8 +24,7 @@ def get_all_portfolio_records(db: SQLiteDB, config_id: str, filter_corrupted: bo
     """
     conn = db._get_connection()
     try:
-        # Filter out corrupted data (cashflow > 1 million or < 0)
-        corruption_filter = "AND ABS(cashflow) < 1000000 AND total_assets > 0" if filter_corrupted else ""
+        corruption_filter = "AND total_assets > 0" if filter_corrupted else ""
 
         query = f"""
             SELECT
@@ -227,10 +226,10 @@ def check_data_quality(db: SQLiteDB, config_id: str) -> dict[str, Any]:
             """
             SELECT
                 COUNT(*) as total_records,
-                SUM(CASE WHEN ABS(cashflow) > 1000000 OR total_assets <= 0 THEN 1 ELSE 0 END) as corrupted_records,
-                MIN(CASE WHEN ABS(cashflow) < 1000000 AND total_assets > 0 THEN trading_date END) as first_valid_date,
-                MAX(CASE WHEN ABS(cashflow) < 1000000 AND total_assets > 0 THEN trading_date END) as last_valid_date,
-                MIN(CASE WHEN ABS(cashflow) > 1000000 OR total_assets <= 0 THEN trading_date END) as first_corrupted_date
+                SUM(CASE WHEN total_assets <= 0 THEN 1 ELSE 0 END) as corrupted_records,
+                MIN(CASE WHEN total_assets > 0 THEN trading_date END) as first_valid_date,
+                MAX(CASE WHEN total_assets > 0 THEN trading_date END) as last_valid_date,
+                MIN(CASE WHEN total_assets <= 0 THEN trading_date END) as first_corrupted_date
             FROM portfolio
             WHERE config_id = ?
         """,

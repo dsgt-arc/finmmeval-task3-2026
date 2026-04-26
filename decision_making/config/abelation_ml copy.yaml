@@ -1,5 +1,5 @@
 # Deep Fund Configuration
-exp_name: "tesla_btc_baseline"
+exp_name: "abelation_ml_model"
 
 # Trading settings
 cashflow: 100000
@@ -14,8 +14,10 @@ sequential_mode: false  # false for parallel, true for sequential execution
 # Analysts to run, refer to graph.constants.py
 workflow_analysts:
   #- dummy
-  - technical
+  #- technical
   - company_news
+  #- company_news_enhanced
+  - ml_model_agent_online
 
 # LLM model settings, refer to llm/inference.py: LLMConfig
 llm:
