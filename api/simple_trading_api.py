@@ -4,7 +4,7 @@ Separation of concerns:
 - Validates the organizer payload and exposes the HTTP endpoints.
 - Does not contain trading logic.
 - Calls `api.decision_bridge.recommend_action(payload)` and returns the
-  exact competition response shape.
+  exact competition response shape for the Task 3 signal-only endpoint.
 - Keeps the transport layer small so the deployment is easy to reason about.
 """
 
@@ -36,14 +36,15 @@ class TradingRequest(BaseModel):
 
     # This is the organizer payload. Some fields are optional because the
     # competition text says news and filings may be absent for some assets.
+    # We also allow per-symbol null values so sparse days do not break parsing.
     date: str
     price: Dict[str, float]
-    news: Optional[Dict[str, List[str]]] = None
+    news: Optional[Dict[str, List[str] | None]] = None
     symbol: Optional[List[str]] = None
-    momentum: Dict[str, str] = Field(default_factory=dict)
-    ten_k: Optional[Dict[str, List[str]]] = Field(default=None, alias="10k")
-    ten_q: Optional[Dict[str, List[str]]] = Field(default=None, alias="10q")
-    history_price: Dict[str, List[HistoricalPrice]] = Field(default_factory=dict)
+    momentum: Optional[Dict[str, str | None]] = None
+    ten_k: Optional[Dict[str, List[str] | None]] = Field(default=None, alias="10k")
+    ten_q: Optional[Dict[str, List[str] | None]] = Field(default=None, alias="10q")
+    history_price: Dict[str, List[HistoricalPrice] | None] = Field(default_factory=dict)
 
 
 class TradingResponse(BaseModel):
@@ -80,7 +81,7 @@ async def health():
 
 def _recommend_action_payload(request: TradingRequest) -> dict:
     payload = _payload_for_bridge(request)
-    # The bridge returns the action from the existing workflow.
+    # The bridge returns the final 3-way signal from the existing workflow.
     action = recommend_action(payload)
     return {"recommended_action": _normalize_action(action)}
 

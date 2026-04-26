@@ -1,0 +1,28 @@
+# Deep Fund API Configuration
+#
+# This is the default workflow config used by the competition-facing API.
+# The deployed API loads this file unless DECISION_BRIDGE_CONFIG is set in the
+# environment. To change the deployed workflow, edit the analyst list below or
+# point DECISION_BRIDGE_CONFIG at another YAML file.
+
+exp_name: "api"
+
+# Trading settings
+cashflow: 100000
+tickers:
+  - TSLA
+  - BTC
+
+# Workflow execution mode
+sequential_mode: false  # false for parallel, true for sequential execution
+
+# Analysts to run, refer to graph.constants.py.
+# Keep only agents that are actually implemented and registered in the repo.
+workflow_analysts:
+  - technical
+  - company_news
+
+# LLM model settings, refer to llm/inference.py: LLMConfig
+llm:
+  provider: "OpenAI"
+  model: "gpt-4o-mini" # DeepSeek-V3

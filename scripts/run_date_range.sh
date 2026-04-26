@@ -123,6 +123,8 @@ import os
 import subprocess
 import sys
 
+import pandas_market_calendars as mcal
+
 start = datetime.strptime("$START_DATE", "%Y-%m-%d")
 end = datetime.strptime("$END_DATE", "%Y-%m-%d")
 repo_root = os.path.abspath(".")
@@ -133,11 +135,19 @@ if start > end:
     print("Error: start_date must be <= end_date")
     sys.exit(1)
 
+nyse = mcal.get_calendar("NYSE")
+schedule = nyse.schedule(start_date=start.strftime("%Y-%m-%d"), end_date=end.strftime("%Y-%m-%d"))
+trading_days = set(schedule.index.date)
+
 current = start
-total_days = (end - start).days + 1
+total_days = len(trading_days)
 day_num = 0
 
 while current <= end:
+    if current.date() not in trading_days:
+        current += timedelta(days=1)
+        continue
+
     day_num += 1
     trading_date = current.strftime("%Y-%m-%d")
     print(f"=== Processing date {day_num}/{total_days}: {trading_date} ===")

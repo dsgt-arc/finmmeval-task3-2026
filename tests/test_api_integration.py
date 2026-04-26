@@ -40,6 +40,13 @@ def _real_payload(symbol: str, trading_date: str) -> dict:
     }
 
 
+def _real_payload_with_null_filings(symbol: str, trading_date: str) -> dict:
+    payload = _real_payload(symbol, trading_date)
+    payload["10k"] = None
+    payload["10q"] = None
+    return payload
+
+
 @pytest.mark.parametrize("symbol", ["TSLA", "BTC"])
 def test_competition_action_runs_real_workflow(monkeypatch, symbol):
     # Keep the integration test deterministic by telling the bridge which
@@ -49,6 +56,19 @@ def test_competition_action_runs_real_workflow(monkeypatch, symbol):
 
     client = TestClient(app)
     payload = _real_payload(symbol, "2026-03-19")
+
+    response = client.post("/competition_action/", json=payload)
+
+    assert response.status_code == 200
+    assert response.json()["recommended_action"] in {"BUY", "HOLD", "SELL"}
+
+
+def test_competition_action_runs_real_workflow_with_null_filings(monkeypatch):
+    monkeypatch.setenv("DECISION_BRIDGE_CONFIG", str(ROOT / "decision_making" / "config" / "debug_pm.yaml"))
+    monkeypatch.setenv("DECISION_BRIDGE_EXP_NAME", "api_integration_test_btc_null_filings")
+
+    client = TestClient(app)
+    payload = _real_payload_with_null_filings("BTC", "2026-03-19")
 
     response = client.post("/competition_action/", json=payload)
 

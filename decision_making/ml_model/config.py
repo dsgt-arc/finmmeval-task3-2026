@@ -30,3 +30,16 @@ TRAIN_CONFIG = {
 
 FEATURE_DIST_COLS = ["return_lag_1", "return_lag_5", "return_lag_21", "volatility_21d"]
 FEATURE_DIST_PERCENTILES = [0.01, 0.05, 0.25, 0.5, 0.75, 0.95, 0.99]
+
+# Proxy tickers used by the ML model when the primary ticker lacks enough price history.
+# Remove an entry once the ticker has accumulated sufficient observations.
+ML_TICKER_PROXY: dict[str, str] = {
+    "BTC": "TSLA",
+}
+
+# Sector overrides for tickers not in the S&P 500 sector_map.
+# BTC maps to "Financial Services" — the sector of bitcoin-exposed S&P 500 companies
+# (COIN, RIOT, MARA), matching their yfinance classification.
+EXTRA_TICKER_SECTORS: dict[str, str] = {
+    "BTC": "Financial Services",
+}

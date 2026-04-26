@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import json
 import os
+import logging
 import subprocess
 import sys
 import tempfile
@@ -18,6 +19,7 @@ from pathlib import Path
 from typing import Any, Dict
 
 VALID_ACTIONS = {"BUY", "HOLD", "SELL"}
+logger = logging.getLogger(__name__)
 
 
 def _validate_payload(payload: Dict[str, Any]) -> str:
@@ -38,7 +40,7 @@ def _build_worker_env(db_path: Path) -> dict[str, str]:
         pythonpath_parts.append(env["PYTHONPATH"])
     env["PYTHONPATH"] = os.pathsep.join(pythonpath_parts)
     env["DB_PATH"] = str(db_path)
-    env.setdefault("DECISION_BRIDGE_CONFIG", str(repo_root / "decision_making" / "config" / "dev.yaml"))
+    env.setdefault("DECISION_BRIDGE_CONFIG", str(repo_root / "decision_making" / "config" / "api.yaml"))
     env.setdefault("DECISION_BRIDGE_EXP_NAME", "api_endpoint")
     return env
 
@@ -68,14 +70,28 @@ def recommend_action(payload: Dict[str, Any]) -> str:
         # Run the worker as a separate Python process so the API stays thin and
         # the workflow can use its normal imports and DB initialization.
         cmd = [sys.executable, "-m", "api.decision_bridge_worker", str(payload_path)]
-        result = subprocess.run(cmd, capture_output=True, text=True, env=env, timeout=170)
+        try:
+            result = subprocess.run(cmd, capture_output=True, text=True, env=env, timeout=170)
+        except subprocess.TimeoutExpired:
+            logger.warning("Decision worker timed out; defaulting to HOLD")
+            return "HOLD"
+        except Exception as exc:
+            logger.warning("Decision worker could not be started: %s", exc)
+            return "HOLD"
 
         if result.returncode != 0:
-            raise RuntimeError(result.stderr.strip() or result.stdout.strip() or "Decision worker failed")
+            logger.warning("Decision worker failed; defaulting to HOLD: %s", result.stderr.strip() or result.stdout.strip())
+            return "HOLD"
 
-        data = json.loads(result.stdout)
+        try:
+            data = json.loads(result.stdout)
+        except json.JSONDecodeError:
+            logger.warning("Decision worker returned invalid JSON; defaulting to HOLD")
+            return "HOLD"
+
         action = data.get("recommended_action")
         if not isinstance(action, str):
-            raise RuntimeError(f"Decision worker returned invalid payload: {data!r}")
+            logger.warning("Decision worker returned invalid payload; defaulting to HOLD: %r", data)
+            return "HOLD"
 
         return _normalize_action(action)
