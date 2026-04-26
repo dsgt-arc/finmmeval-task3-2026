@@ -1,0 +1,23 @@
+# Deep Fund Configuration — Gemini 2.0 Flash backend
+exp_name: "dev_gemini"
+
+# Trading settings
+cashflow: 100000
+tickers:
+  - TSLA
+  - BTC
+
+# Workflow execution mode
+sequential_mode: false # false for parallel, true for sequential execution
+
+# Analysts to run, refer to graph.constants.py
+workflow_analysts:
+  - technical
+  - section_news
+  # - company_news_enhanced
+  # - ml_model_agent_online
+
+# LLM model settings, refer to llm/inference.py: LLMConfig
+llm:
+  provider: "Google"
+  model: "gemini-2.0-flash"

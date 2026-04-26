@@ -1,5 +1,12 @@
+from __future__ import annotations
+
 from abc import ABC, abstractmethod
-from datetime import datetime
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from datetime import datetime
+
+    from memory.schema import MemoryEntry
 
 
 class BaseDB(ABC):
@@ -53,4 +60,38 @@ class BaseDB(ABC):
 
     @abstractmethod
     def get_signal_history(self, exp_name: str, ticker: str, analyst: str, lookback_days: int = 10) -> list:
+        pass
+
+    # ------------------------------------------------------------------
+    # Layered memory CRUD
+    # ------------------------------------------------------------------
+
+    @abstractmethod
+    def save_memory(self, entry: MemoryEntry) -> int | None:
+        """Insert a new memory entry and return its auto-generated id."""
+        pass
+
+    @abstractmethod
+    def get_memories(self, exp_name: str, ticker: str) -> list[MemoryEntry]:
+        """Return all memory entries for a given experiment and ticker."""
+        pass
+
+    @abstractmethod
+    def get_all_memories(self, exp_name: str) -> list[MemoryEntry]:
+        """Return all memory entries for a given experiment (all tickers)."""
+        pass
+
+    @abstractmethod
+    def get_memories_by_ids(self, ids: list[int]) -> list[MemoryEntry]:
+        """Return memory entries for the given ids."""
+        pass
+
+    @abstractmethod
+    def update_memories(self, entries: list[MemoryEntry]) -> None:
+        """Bulk-update importance, recency, delta, layer, and access_count."""
+        pass
+
+    @abstractmethod
+    def delete_memories(self, ids: list[int]) -> None:
+        """Delete memory entries by id (called during cleanup)."""
         pass

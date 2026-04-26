@@ -6,6 +6,7 @@ import uuid
 from decision_making.database.interface import BaseDB
 from decision_making.database.sqlite_setup import DB_PATH
 from decision_making.graph.schema import AnalystSignal, Decision
+from decision_making.memory.schema import MemoryEntry, MemoryLayer
 from decision_making.util.logger import logger
 
 
@@ -437,6 +438,148 @@ class SQLiteDB(BaseDB):
         except Exception as e:
             logger.warning(f"Error retrieving signal history: {e}")
             return []
+        finally:
+            if conn:
+                conn.close()
+
+    # ------------------------------------------------------------------
+    # Layered memory CRUD
+    # ------------------------------------------------------------------
+
+    def _row_to_memory_entry(self, row) -> MemoryEntry:
+        return MemoryEntry(
+            id=row["id"],
+            exp_name=row["exp_name"],
+            ticker=row["ticker"],
+            created_date=row["created_date"],
+            text=row["text"],
+            importance=row["importance"],
+            recency=row["recency"],
+            delta=row["delta"],
+            layer=MemoryLayer(row["layer"]),
+            access_count=row["access_count"],
+        )
+
+    def save_memory(self, entry: MemoryEntry) -> int | None:
+        """Insert a new memory entry and return its auto-generated id."""
+        conn = None
+        try:
+            conn = self._get_connection()
+            cursor = conn.cursor()
+            cursor.execute(
+                """
+                INSERT INTO memory
+                    (exp_name, ticker, created_date, text, importance, recency, delta, layer, access_count)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    entry.exp_name,
+                    entry.ticker,
+                    entry.created_date,
+                    entry.text,
+                    entry.importance,
+                    entry.recency,
+                    entry.delta,
+                    entry.layer.value,
+                    entry.access_count,
+                ),
+            )
+            conn.commit()
+            return cursor.lastrowid
+        except Exception as e:
+            logger.error(f"Error saving memory: {e}")
+            return None
+        finally:
+            if conn:
+                conn.close()
+
+    def get_memories(self, exp_name: str, ticker: str) -> list[MemoryEntry]:
+        """Return all memory entries for a given experiment and ticker."""
+        conn = None
+        try:
+            conn = self._get_connection()
+            cursor = conn.cursor()
+            cursor.execute(
+                "SELECT * FROM memory WHERE exp_name = ? AND ticker = ? ORDER BY id",
+                (exp_name, ticker),
+            )
+            return [self._row_to_memory_entry(row) for row in cursor.fetchall()]
+        except Exception as e:
+            logger.error(f"Error fetching memories: {e}")
+            return []
+        finally:
+            if conn:
+                conn.close()
+
+    def get_all_memories(self, exp_name: str) -> list[MemoryEntry]:
+        """Return all memory entries for a given experiment (all tickers)."""
+        conn = None
+        try:
+            conn = self._get_connection()
+            cursor = conn.cursor()
+            cursor.execute("SELECT * FROM memory WHERE exp_name = ? ORDER BY id", (exp_name,))
+            return [self._row_to_memory_entry(row) for row in cursor.fetchall()]
+        except Exception as e:
+            logger.error(f"Error fetching all memories: {e}")
+            return []
+        finally:
+            if conn:
+                conn.close()
+
+    def get_memories_by_ids(self, ids: list[int]) -> list[MemoryEntry]:
+        """Return memory entries for the given ids."""
+        if not ids:
+            return []
+        conn = None
+        try:
+            conn = self._get_connection()
+            cursor = conn.cursor()
+            placeholders = ",".join("?" * len(ids))
+            cursor.execute(f"SELECT * FROM memory WHERE id IN ({placeholders})", ids)
+            return [self._row_to_memory_entry(row) for row in cursor.fetchall()]
+        except Exception as e:
+            logger.error(f"Error fetching memories by ids: {e}")
+            return []
+        finally:
+            if conn:
+                conn.close()
+
+    def update_memories(self, entries: list[MemoryEntry]) -> None:
+        """Bulk-update importance, recency, delta, layer, and access_count."""
+        if not entries:
+            return
+        conn = None
+        try:
+            conn = self._get_connection()
+            cursor = conn.cursor()
+            cursor.executemany(
+                """
+                UPDATE memory
+                SET importance = ?, recency = ?, delta = ?, layer = ?, access_count = ?
+                WHERE id = ?
+                """,
+                [(e.importance, e.recency, e.delta, e.layer.value, e.access_count, e.id) for e in entries if e.id is not None],
+            )
+            conn.commit()
+        except Exception as e:
+            logger.error(f"Error updating memories: {e}")
+        finally:
+            if conn:
+                conn.close()
+
+    def delete_memories(self, ids: list[int]) -> None:
+        """Delete memory entries by id."""
+        if not ids:
+            return
+        conn = None
+        try:
+            conn = self._get_connection()
+            cursor = conn.cursor()
+            placeholders = ",".join("?" * len(ids))
+            cursor.execute(f"DELETE FROM memory WHERE id IN ({placeholders})", ids)
+            conn.commit()
+        except Exception as e:
+            logger.error(f"Error deleting memories: {e}")
         finally:
             if conn:
                 conn.close()

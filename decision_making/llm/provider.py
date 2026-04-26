@@ -1,11 +1,11 @@
 from dataclasses import dataclass
-from enum import Enum
-from typing import Optional, Type
+from enum import StrEnum
 
 from langchain_anthropic import ChatAnthropic
 from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_deepseek import ChatDeepSeek
 from langchain_fireworks import ChatFireworks
+from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_ollama import ChatOllama
 from langchain_openai import ChatOpenAI
 
@@ -14,13 +14,13 @@ from langchain_openai import ChatOpenAI
 class ModelConfig:
     """Configuration for a model provider"""
 
-    model_class: Type[BaseChatModel]
-    env_key: Optional[str] = None
-    base_url: Optional[str] = None
+    model_class: type[BaseChatModel]
+    env_key: str | None = None
+    base_url: str | None = None
     requires_api_key: bool = True
 
 
-class Provider(str, Enum):
+class Provider(StrEnum):
     """Supported LLM providers"""
 
     OPENAI = "OpenAI"
@@ -32,6 +32,7 @@ class Provider(str, Enum):
     FIREWORKS = "Fireworks"
     YIZHAN = "YiZhan"
     AIHUBMIX = "AiHubMix"
+    GOOGLE = "Google"
 
     @property
     def config(self) -> ModelConfig:
@@ -76,6 +77,10 @@ class Provider(str, Enum):
                 model_class=ChatOpenAI,
                 env_key="AIHUBMIX_API_KEY",
                 base_url="https://api.aihubmix.com/v1",
+            ),
+            Provider.GOOGLE: ModelConfig(
+                model_class=ChatGoogleGenerativeAI,
+                env_key="GOOGLE_API_KEY",
             ),
         }
         return PROVIDER_CONFIGS[self]

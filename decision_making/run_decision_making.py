@@ -1,5 +1,12 @@
 import argparse
+from pathlib import Path
+import sys
 from typing import Any
+
+# Add the decision_making package directory to sys.path so bare intra-package
+# imports (e.g. `from graph.workflow import ...`) resolve when this module is
+# run via `python -m decision_making.run_decision_making`.
+sys.path.insert(0, str(Path(__file__).parent))
 
 from dotenv import load_dotenv
 

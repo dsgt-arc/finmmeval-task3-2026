@@ -77,6 +77,22 @@ def init_database():
     )
     """)
 
+    # Create memory table for layered memory processing (working + long-term)
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS memory (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        exp_name VARCHAR(100) NOT NULL,
+        ticker VARCHAR(10) NOT NULL,
+        created_date TEXT NOT NULL,
+        text TEXT NOT NULL,
+        importance REAL NOT NULL DEFAULT 50.0,
+        recency REAL NOT NULL DEFAULT 1.0,
+        delta INTEGER NOT NULL DEFAULT 0,
+        layer VARCHAR(20) NOT NULL DEFAULT 'working',
+        access_count INTEGER NOT NULL DEFAULT 0
+    )
+    """)
+
     # Create indices for better query performance
     cursor.execute("CREATE INDEX IF NOT EXISTS idx_config_exp_name ON config(exp_name)")
     cursor.execute("CREATE INDEX IF NOT EXISTS idx_portfolio_updated ON portfolio(updated_at)")
@@ -87,6 +103,8 @@ def init_database():
     cursor.execute("CREATE INDEX IF NOT EXISTS idx_signal_portfolio ON signal(portfolio_id)")
     cursor.execute("CREATE INDEX IF NOT EXISTS idx_signal_updated ON signal(updated_at)")
     cursor.execute("CREATE INDEX IF NOT EXISTS idx_signal_analyst ON signal(analyst)")
+    cursor.execute("CREATE INDEX IF NOT EXISTS idx_memory_exp_ticker ON memory(exp_name, ticker)")
+    cursor.execute("CREATE INDEX IF NOT EXISTS idx_memory_layer ON memory(layer)")
 
     conn.commit()
     conn.close()
@@ -109,7 +127,34 @@ def migrate_signal_table_v2():
     conn.close()
 
 
+def migrate_memory_table_v1():
+    """Create memory table if it doesn't exist (idempotent migration)."""
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS memory (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        exp_name VARCHAR(100) NOT NULL,
+        ticker VARCHAR(10) NOT NULL,
+        created_date TEXT NOT NULL,
+        text TEXT NOT NULL,
+        importance REAL NOT NULL DEFAULT 50.0,
+        recency REAL NOT NULL DEFAULT 1.0,
+        delta INTEGER NOT NULL DEFAULT 0,
+        layer VARCHAR(20) NOT NULL DEFAULT 'working',
+        access_count INTEGER NOT NULL DEFAULT 0
+    )
+    """)
+    cursor.execute("CREATE INDEX IF NOT EXISTS idx_memory_exp_ticker ON memory(exp_name, ticker)")
+    cursor.execute("CREATE INDEX IF NOT EXISTS idx_memory_layer ON memory(layer)")
+
+    conn.commit()
+    conn.close()
+
+
 if __name__ == "__main__":
     init_database()
     migrate_signal_table_v2()
+    migrate_memory_table_v1()
     print(f"Database initialized and migrated at {DB_PATH}")

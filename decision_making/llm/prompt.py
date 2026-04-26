@@ -156,10 +156,13 @@ Provide structured output with the following fields:
 """
 
 PORTFOLIO_PROMPT = """
-You are a portfolio manager making final trading decisions based on decision memory, and the provided optimal position ratio.
+You are a portfolio manager making final trading decisions based on decision memory, layered memory insights, and the provided optimal position ratio.
 
-Here is the decision memory:
+Here is the decision memory (recent trade history):
 {decision_memory}
+
+Here are relevant memory insights retrieved from the layered memory system:
+{memory_context}
 
 Current Price: {current_price}
 Holding Shares: {current_shares}
@@ -168,6 +171,10 @@ Tradable Shares: {tradable_shares}
 If the value of tradable shares is positive, you can buy more shares.
 If the value of tradable shares is negative, you can sell some shares.
 If the value of tradable shares is close to 0, you can hold.
+
+Working Memory contains recent, fast-decaying observations.
+Long-Term Memory contains consolidated patterns with higher importance that have persisted across many trading cycles.
+Weight Long-Term Memory insights more heavily when they contradict recent short-term noise.
 
 You must provide your decision as a structured output with the following fields:
 - action: One of ["Buy", "Sell", "Hold"]
