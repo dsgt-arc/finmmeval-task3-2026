@@ -32,7 +32,8 @@ def _average_sentiment(article_sentiments: list[AnalystSignal]) -> AnalystSignal
     justification = f"Based on {len(article_sentiments)} articles: " + ", ".join([
         f"{s.signal} (strength {s.signal_strength})" for s in article_sentiments if s.signal == signal
     ])
-    strength = sum(strengths[signal]) / len(article_sentiments)
+    valid_strengths = [v for v in strengths[signal] if v is not None]
+    strength = sum(valid_strengths) / len(valid_strengths) if valid_strengths else 0.0
 
     if not (counts[signal] > len(article_sentiments) / 2):
         # no clear majority, return NEUTRAL
