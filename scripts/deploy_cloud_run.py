@@ -318,8 +318,7 @@ def build_and_push_image(
 
 def deploy_to_cloud_run(
     *,
-    source_root: Path,
-    include_ml_assets: bool,
+    image_uri: str,
     config_path: Path,
     service: str,
     region: str,
@@ -333,8 +332,7 @@ def deploy_to_cloud_run(
         print(f"  region: {region}")
         print(f"  project: {project or '(current gcloud project)'}")
         print(f"  config: {config_path}")
-        print(f"  source: {source_root}")
-        print(f"  ml_assets: {include_ml_assets}")
+        print(f"  image: {image_uri}")
         print(f"  secret: {secret_name}")
         return
 
@@ -343,8 +341,8 @@ def deploy_to_cloud_run(
         "run",
         "deploy",
         service,
-        "--source",
-        str(source_root),
+        "--image",
+        image_uri,
         "--region",
         region,
         "--allow-unauthenticated",
@@ -356,6 +354,7 @@ def deploy_to_cloud_run(
         "1",
         "--timeout",
         "300s",
+        "--quiet",
         "--set-secrets",
         f"{DEFAULT_SECRET_NAME}={secret_name}:latest",
     ]
@@ -395,9 +394,9 @@ def main() -> None:
     if args.dry_run:
         if args.sync_secret:
             print(f"Dry run: would sync {args.secret_name} from local {DEFAULT_SECRET_NAME}.")
+        image_uri = f"{args.region}-docker.pkg.dev/{get_effective_project(args.project)}/{ARTIFACT_REPO}/{args.service}:dry-run"
         deploy_to_cloud_run(
-            source_root=root,
-            include_ml_assets=needs_ml_artifacts(analysts),
+            image_uri=image_uri,
             config_path=config_path,
             service=args.service,
             region=args.region,
@@ -419,20 +418,22 @@ def main() -> None:
         )
     ensure_secret_accessor_binding(args.secret_name, args.project)
 
-    staged_root = stage_deploy_context(root, include_ml_assets=needs_ml_artifacts(analysts))
-    try:
-        deploy_to_cloud_run(
-            source_root=staged_root,
-            include_ml_assets=needs_ml_artifacts(analysts),
-            config_path=config_path,
-            service=args.service,
-            region=args.region,
-            project=args.project,
-            secret_name=args.secret_name,
-            dry_run=args.dry_run,
-        )
-    finally:
-        shutil.rmtree(staged_root, ignore_errors=True)
+    image_uri = build_and_push_image(
+        source_root=root,
+        include_ml_assets=needs_ml_artifacts(analysts),
+        service=args.service,
+        region=args.region,
+        project=args.project,
+    )
+    deploy_to_cloud_run(
+        image_uri=image_uri,
+        config_path=config_path,
+        service=args.service,
+        region=args.region,
+        project=args.project,
+        secret_name=args.secret_name,
+        dry_run=args.dry_run,
+    )
 
 
 if __name__ == "__main__":

@@ -29,6 +29,16 @@ def get_model(config: LLMConfig):
             logger.error(f"API Key Error: Please make sure {model_config.env_key} is set in your .env file.")
             raise ValueError(f"{provider} API key not found. Please set {model_config.env_key} in .env file.")
 
+    model_class = model_config.load_model_class()
+    logger.info(
+        "[llm] loading provider=%s model=%s class=%s base_url=%s api_key=%s",
+        provider.value,
+        config.model,
+        f"{model_class.__module__}.{model_class.__name__}",
+        model_config.base_url or "-",
+        "set" if model_config.requires_api_key else "not-required",
+    )
+
     kwargs = {
         "model": config.model,
         **({"api_key": api_key} if model_config.requires_api_key else {}),
@@ -37,7 +47,9 @@ def get_model(config: LLMConfig):
     }
 
     try:
-        return model_config.model_class(**kwargs)
+        instance = model_class(**kwargs)
+        logger.info("[llm] model ready provider=%s model=%s", provider.value, config.model)
+        return instance
     except Exception as e:
         logger.error(f"{provider} Chat Error: {e}")
         raise ValueError(f"{provider} Chat Error: {e}")
@@ -55,6 +67,7 @@ def agent_call(prompt: str, llm_config: dict[str, Any], pydantic_model: BaseMode
         An instance of output_model (with defaults if error occurs)
     """
     llm_cfg = LLMConfig(**llm_config)
+    logger.info("[llm] agent call start provider=%s model=%s prompt_chars=%d", llm_cfg.provider, llm_cfg.model, len(prompt))
     llm = get_model(llm_cfg)
 
     # Explicitly use function_calling method for structured output
@@ -65,11 +78,13 @@ def agent_call(prompt: str, llm_config: dict[str, Any], pydantic_model: BaseMode
             result = llm.invoke(prompt)
             if result is None:
                 raise ValueError("LLM returned None")
+            logger.info("[llm] agent call succeeded provider=%s model=%s", llm_cfg.provider, llm_cfg.model)
             return result
         except Exception as e:
             logger.warning(f"Attempt {attempt + 1}/{llm_cfg.max_retries} failed: {e}")
             if attempt == llm_cfg.max_retries - 1:
                 logger.error(f"All {llm_cfg.max_retries} attempts failed")
+                logger.error("[llm] falling back to default structured output provider=%s model=%s", llm_cfg.provider, llm_cfg.model)
                 return pydantic_model()
 
     return pydantic_model()

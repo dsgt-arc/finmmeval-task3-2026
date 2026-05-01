@@ -10,7 +10,10 @@ Separation of concerns:
 
 from __future__ import annotations
 
+import inspect
 import os
+import uuid
+import logging
 from typing import Any, Dict, List, Optional
 
 from dotenv import load_dotenv
@@ -22,6 +25,7 @@ from api.decision_bridge import recommend_action
 load_dotenv()
 
 app = FastAPI(title="Simple Trading API", version="5.0.0")
+logger = logging.getLogger(__name__)
 
 VALID_ACTIONS = {"BUY", "HOLD", "SELL"}
 
@@ -69,6 +73,29 @@ def _payload_for_bridge(request: TradingRequest) -> Dict[str, Any]:
     return payload
 
 
+def _request_summary(request: TradingRequest) -> dict[str, Any]:
+    symbols = request.symbol or list(request.price.keys())
+    return {
+        "date": request.date,
+        "symbols": symbols,
+        "price_count": len(request.price),
+        "news_count": 0 if request.news is None else len(request.news),
+        "ten_k_count": 0 if request.ten_k is None else len(request.ten_k),
+        "ten_q_count": 0 if request.ten_q is None else len(request.ten_q),
+    }
+
+
+def _call_recommend_action(payload: Dict[str, Any], request_id: str) -> str:
+    """Call the bridge while preserving compatibility with monkeypatched tests."""
+    signature = inspect.signature(recommend_action)
+    accepts_request_id = "request_id" in signature.parameters
+    accepts_var_keyword = any(param.kind == inspect.Parameter.VAR_KEYWORD for param in signature.parameters.values())
+
+    if accepts_request_id or accepts_var_keyword:
+        return recommend_action(payload, request_id=request_id)
+    return recommend_action(payload)
+
+
 @app.get("/")
 async def home():
     return {"message": "Simple Trading API is running"}
@@ -80,10 +107,14 @@ async def health():
 
 
 def _recommend_action_payload(request: TradingRequest) -> dict:
+    request_id = uuid.uuid4().hex[:10]
     payload = _payload_for_bridge(request)
+    logger.info("Request received request_id=%s summary=%s", request_id, _request_summary(request))
     # The bridge returns the final 3-way signal from the existing workflow.
-    action = recommend_action(payload)
-    return {"recommended_action": _normalize_action(action)}
+    action = _call_recommend_action(payload, request_id)
+    normalized = _normalize_action(action)
+    logger.info("Request completed request_id=%s action=%s", request_id, normalized)
+    return {"recommended_action": normalized}
 
 
 @app.post("/competition_action/", response_model=TradingResponse)

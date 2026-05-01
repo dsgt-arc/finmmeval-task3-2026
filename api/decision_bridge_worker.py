@@ -26,6 +26,7 @@ for path in (str(DECISION_MAKING_DIR), str(REPO_ROOT)):
 
 from graph.workflow import AgentWorkflow  # noqa: E402
 from util.db_helper import db_initialize, get_db  # noqa: E402
+from util.logger import logger  # noqa: E402
 
 from decision_making.run_decision_making import load_portfolio_config  # noqa: E402
 
@@ -113,23 +114,46 @@ def main() -> int:
         print("Usage: python -m api.decision_bridge_worker <payload.json>", file=sys.stderr)
         return 2
 
-    payload_path = Path(sys.argv[1])
-    payload = _load_payload(payload_path)
-    cfg = _build_config(payload)
+    try:
+        payload_path = Path(sys.argv[1])
+        payload = _load_payload(payload_path)
+        request_id = os.getenv("DECISION_BRIDGE_REQUEST_ID", "unknown")
+        logger.info(
+            "Worker start request_id=%s date=%s symbols=%s",
+            request_id,
+            payload.get("date"),
+            payload.get("symbol") or list((payload.get("price") or {}).keys()),
+        )
+        cfg = _build_config(payload)
+        logger.info(
+            "Worker config built request_id=%s exp_name=%s tickers=%s config=%s",
+            request_id,
+            cfg.get("exp_name"),
+            cfg.get("tickers"),
+            os.getenv("DECISION_BRIDGE_CONFIG", str(REPO_ROOT / "decision_making" / "config" / "api.yaml")),
+        )
 
-    # Initialize the isolated SQLite database for this request.
-    db_initialize(use_local_db=True)
-    db = get_db()
-    config_id = load_portfolio_config(cfg, db)
+        # Initialize the isolated SQLite database for this request.
+        logger.info("Worker initializing isolated SQLite database request_id=%s", request_id)
+        db_initialize(use_local_db=True)
+        db = get_db()
+        config_id = load_portfolio_config(cfg, db)
+        logger.info("Worker config ready request_id=%s config_id=%s", request_id, config_id)
 
-    # This is the actual DeepFund workflow the other team owns.
-    workflow = AgentWorkflow(cfg, config_id)
-    workflow.run(config_id)
+        # This is the actual DeepFund workflow the other team owns.
+        logger.info("Worker starting workflow request_id=%s config_id=%s", request_id, config_id)
+        workflow = AgentWorkflow(cfg, config_id)
+        workflow.run(config_id)
+        logger.info("Worker workflow completed request_id=%s config_id=%s", request_id, config_id)
 
-    # Read the latest action back from the workflow DB and print it as JSON.
-    action = _latest_action(cfg["exp_name"], cfg["tickers"])
-    print(json.dumps({"recommended_action": action}))
-    return 0
+        # Read the latest action back from the workflow DB and print it as JSON.
+        action = _latest_action(cfg["exp_name"], cfg["tickers"])
+        logger.info("Worker selected action request_id=%s action=%s", request_id, action)
+        print(json.dumps({"recommended_action": action}))
+        return 0
+    except Exception:
+        logger.exception("Worker failed request_id=%s", os.getenv("DECISION_BRIDGE_REQUEST_ID", "unknown"))
+        return 1
 
 
 if __name__ == "__main__":

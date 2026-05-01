@@ -122,6 +122,25 @@ def test_competition_action_returns_exact_response_shape(client, sample_payload,
     assert response.json() == {"recommended_action": "BUY"}
 
 
+def test_competition_action_passes_request_id_when_bridge_accepts_it(client, sample_payload, monkeypatch):
+    observed = {}
+
+    def fake_recommend_action(payload, request_id=None):
+        observed["payload"] = payload
+        observed["request_id"] = request_id
+        return "hold"
+
+    monkeypatch.setattr("api.simple_trading_api.recommend_action", fake_recommend_action)
+
+    response = client.post("/competition_action/", json=sample_payload)
+
+    assert response.status_code == 200
+    assert response.json() == {"recommended_action": "HOLD"}
+    assert observed["payload"]["symbol"] == ["TSLA"]
+    assert isinstance(observed["request_id"], str)
+    assert observed["request_id"]
+
+
 def test_competition_action_falls_back_to_price_symbol_when_symbol_missing(client, sample_payload, monkeypatch):
     sample_payload = dict(sample_payload)
     sample_payload.pop("symbol")
