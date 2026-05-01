@@ -15,6 +15,7 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from api import decision_bridge
+from api import decision_bridge_worker
 from api.simple_trading_api import app
 
 
@@ -83,6 +84,26 @@ def btc_payload():
     }
 
 
+@pytest.fixture
+def multi_symbol_payload(sample_payload, btc_payload):
+    return {
+        "date": "2026-03-19",
+        "price": {"TSLA": 380.29998779296875, "BTC": 83000.0},
+        "news": {
+            "TSLA": ["Tesla-centred news on 2026-03-19"],
+            "BTC": ["Bitcoin news on 2026-03-19"],
+        },
+        "symbol": ["TSLA", "BTC"],
+        "momentum": {"TSLA": "bearish", "BTC": "neutral"},
+        "10k": {"TSLA": [], "BTC": None},
+        "10q": {"TSLA": [], "BTC": None},
+        "history_price": {
+            "TSLA": sample_payload["history_price"]["TSLA"],
+            "BTC": btc_payload["history_price"]["BTC"],
+        },
+    }
+
+
 def test_health_endpoint(client):
     response = client.get("/health")
 
@@ -99,6 +120,25 @@ def test_competition_action_returns_exact_response_shape(client, sample_payload,
 
     assert response.status_code == 200
     assert response.json() == {"recommended_action": "BUY"}
+
+
+def test_competition_action_passes_request_id_when_bridge_accepts_it(client, sample_payload, monkeypatch):
+    observed = {}
+
+    def fake_recommend_action(payload, request_id=None):
+        observed["payload"] = payload
+        observed["request_id"] = request_id
+        return "hold"
+
+    monkeypatch.setattr("api.simple_trading_api.recommend_action", fake_recommend_action)
+
+    response = client.post("/competition_action/", json=sample_payload)
+
+    assert response.status_code == 200
+    assert response.json() == {"recommended_action": "HOLD"}
+    assert observed["payload"]["symbol"] == ["TSLA"]
+    assert isinstance(observed["request_id"], str)
+    assert observed["request_id"]
 
 
 def test_competition_action_falls_back_to_price_symbol_when_symbol_missing(client, sample_payload, monkeypatch):
@@ -120,6 +160,25 @@ def test_competition_action_falls_back_to_price_symbol_when_symbol_missing(clien
     assert response.status_code == 200
     assert response.json() == {"recommended_action": "SELL"}
     assert observed["payload"]["symbol"] == ["TSLA"]
+
+
+def test_competition_action_falls_back_to_all_price_symbols_when_symbol_missing(client, multi_symbol_payload, monkeypatch):
+    sample_payload = dict(multi_symbol_payload)
+    sample_payload.pop("symbol")
+
+    observed = {}
+
+    def fake_recommend_action(payload):
+        observed["payload"] = payload
+        return "BUY"
+
+    monkeypatch.setattr("api.simple_trading_api.recommend_action", fake_recommend_action)
+
+    response = client.post("/competition_action/", json=sample_payload)
+
+    assert response.status_code == 200
+    assert response.json() == {"recommended_action": "BUY"}
+    assert observed["payload"]["symbol"] == ["TSLA", "BTC"]
 
 
 def test_competition_action_rejects_missing_price(client, sample_payload):
@@ -182,6 +241,32 @@ def test_competition_action_accepts_btc_with_null_filings(client, btc_payload, m
     assert observed["payload"]["symbol"] == ["BTC"]
     assert observed["payload"]["10k"] is None
     assert observed["payload"]["10q"] is None
+
+
+def test_competition_action_preserves_multiple_symbols(client, multi_symbol_payload, monkeypatch):
+    observed = {}
+
+    def fake_recommend_action(payload):
+        observed["payload"] = payload
+        return "HOLD"
+
+    monkeypatch.setattr("api.simple_trading_api.recommend_action", fake_recommend_action)
+
+    response = client.post("/competition_action/", json=multi_symbol_payload)
+
+    assert response.status_code == 200
+    assert response.json() == {"recommended_action": "HOLD"}
+    assert observed["payload"]["symbol"] == ["TSLA", "BTC"]
+
+
+def test_worker_aggregates_actions_across_multiple_tickers(monkeypatch):
+    class FakeDB:
+        def get_decision_memory(self, exp_name, ticker, limit):
+            return [{"action": {"TSLA": "SELL", "BTC": "HOLD"}[ticker]}]
+
+    monkeypatch.setattr(decision_bridge_worker, "get_db", lambda: FakeDB())
+
+    assert decision_bridge_worker._latest_action("api_endpoint", ["TSLA", "BTC"]) == "HOLD"
 
 
 def test_bridge_normalizes_worker_output(monkeypatch, tmp_path):

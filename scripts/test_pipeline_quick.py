@@ -1,6 +1,15 @@
 """Quick test of the ML pipeline with a small dataset."""
 
-from decision_making.feature_engineering import build_feature_matrix
+from pathlib import Path
+
+import pytest
+
+pytest.importorskip("yfinance")
+
+if not (Path(__file__).resolve().parents[1] / "data" / "data_sp500" / "stock_data_long").exists():
+    pytest.skip("SP500 cache is not present; skipping quick pipeline script", allow_module_level=True)
+
+from decision_making.ml_model.feature_engineering import build_feature_matrix
 from decision_making.models import RandomForestReturnModel
 from decision_making.validation import run_walk_forward_validation
 

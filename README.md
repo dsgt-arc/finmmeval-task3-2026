@@ -57,6 +57,57 @@ The expected endpoint shape is:
 - `POST /competition_action/`
 - response: `{"recommended_action": "BUY"}` or `HOLD` / `SELL`
 
+## Docker Deployment
+
+The simplest deployment path is a Docker image plus Google Cloud Run. The
+recommended helper script reads the active workflow config, trains ML artifacts
+only when the workflow actually needs them, stages a minimal source tree, and
+injects `OPENAI_API_KEY` from Secret Manager instead of baking it into the
+image.
+The current deploy helper stages a minimal source tree and lets Cloud Run do
+the image build and rollout in-region.
+
+See [docs/deployment.md](./docs/deployment.md) for the full flow.
+
+Build the image locally:
+
+```bash
+docker build -t finmmeval-task3-2026 .
+```
+
+Run it locally:
+
+```bash
+docker run --rm -p 8080:8080 \
+  -e OPENAI_API_KEY="$OPENAI_API_KEY" \
+  finmmeval-task3-2026
+```
+
+Test it from the same machine:
+
+```bash
+curl http://127.0.0.1:8080/health
+```
+
+Test it from a different computer:
+
+```bash
+curl http://<server-ip-or-domain>:8080/health
+```
+
+If you later want to change the deployed analyst mix, update
+[`decision_making/config/api.yaml`](./decision_making/config/api.yaml) before
+building the image again, or deploy with:
+
+```bash
+uv run python scripts/deploy_cloud_run.py --config decision_making/config/api.yaml --sync-secret
+```
+
+That still targets the same single deployment; the config only changes which
+analysts and artifacts are bundled into that service.
+Cloud Run rolls the service to the new revision, so you do not need to stop the
+existing service first.
+
 ## Repository Layout
 
 - `api/`: HTTP wrapper, bridge, and worker for the competition endpoint.
