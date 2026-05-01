@@ -159,8 +159,14 @@ class AgentWorkflow:
             portfolio.positions[ticker].shares += shares
             portfolio.cashflow -= price * shares
         elif action == Action.SELL:
-            portfolio.positions[ticker].shares -= shares
-            portfolio.cashflow += price * shares
+            total_portfolio_value = portfolio.cashflow + sum(
+                pos.value for pos in portfolio.positions.values()
+            )
+            max_short = int(max(0, total_portfolio_value) // price)
+            max_sell = portfolio.positions[ticker].shares + max_short
+            actual_sell = min(shares, max(0, max_sell))
+            portfolio.positions[ticker].shares -= actual_sell
+            portfolio.cashflow += price * actual_sell
 
         # Always recalculate position value with latest price
         portfolio.positions[ticker].value = round(price * portfolio.positions[ticker].shares, 2)

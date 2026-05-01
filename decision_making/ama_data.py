@@ -1,7 +1,6 @@
 import datetime
 from pathlib import Path
 
-from huggingface_hub import hf_hub_download
 import polars as pl
 
 # HuggingFace dataset configuration
@@ -57,6 +56,8 @@ def download_data(symbol: str, force_download: bool = False) -> Path:
     """
     if symbol not in SPLITS_COMPETITION:
         raise ValueError(f"Unknown symbol: {symbol}. Available: {list(SPLITS_COMPETITION.keys())}")
+
+    from huggingface_hub import hf_hub_download
 
     # Create data directory if it doesn't exist
     DATA_DIR.mkdir(parents=True, exist_ok=True)

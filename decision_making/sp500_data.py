@@ -227,6 +227,10 @@ def save_to_partitioned_parquet(df: pd.DataFrame, path: Path = DATA_DIR / DATA_F
     """
     path.mkdir(parents=True, exist_ok=True)
     df = df.copy()
+    # Parquet needs a single stable dtype for the Value column across all
+    # metrics. Store as pandas string so numeric metrics can be parsed back
+    # with `astype(float)` and categorical metrics like Sector remain intact.
+    df["Value"] = df["Value"].astype("string")
     df["year"] = pd.to_datetime(df["Date"]).dt.year
     for year, year_df in df.groupby("year"):
         year_dir = path / f"year={year}"
@@ -253,6 +257,7 @@ def append_adjclose_to_store(wide_df: pd.DataFrame, path: Path = DATA_DIR / DATA
         .assign(Metric="Adj_Close")
         .dropna(subset=["Value"])
     )
+    new_long["Value"] = new_long["Value"].astype("string")
     new_long["Date"] = pd.to_datetime(new_long["Date"]).dt.strftime("%Y-%m-%d")
     new_long["year"] = pd.to_datetime(new_long["Date"]).dt.year
 

@@ -1,0 +1,16 @@
+.git
+.venv
+.pytest_cache
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+*.egg-info
+.codex
+.vscode
+log
+notebooks
+tests
+docs
+benchmark*.py
+environment_old.yml

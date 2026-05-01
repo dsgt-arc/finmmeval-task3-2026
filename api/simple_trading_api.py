@@ -62,10 +62,10 @@ def _payload_for_bridge(request: TradingRequest) -> Dict[str, Any]:
     # Convert the validated Pydantic model back into a plain dict so the bridge
     # can pass it into the existing decision-making code without API-specific
     # types leaking across the boundary.
-    payload = request.model_dump(by_alias=True, exclude_none=True)
+    payload = request.model_dump(by_alias=True)
     if not payload.get("symbol"):
         # If the organizers omit symbol, infer it from the price map.
-        payload["symbol"] = [next(iter(payload["price"]))]
+        payload["symbol"] = list(payload["price"].keys())
     return payload
 
 
