@@ -9,6 +9,7 @@ dependencies = [
     "numpy",
     "pandas",
     "pandas-market-calendars",
+    "yfinance",
     "matplotlib",
     "scikit-learn",
     "pyyaml",

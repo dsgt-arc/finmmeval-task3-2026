@@ -1,16 +1,17 @@
 from collections.abc import Callable
+from importlib import import_module
+from dataclasses import dataclass
 from typing import ClassVar
 
-from agents.analysts import (
-    company_news_agent,
-    company_news_enhanced_agent,
-    dummy_agent,
-    ml_model_agent_online,
-    section_news_agent,
-    technical_agent,
-)
 from agents.portfolio_manager import portfolio_agent
 from graph.constants import AgentKey
+
+
+@dataclass(frozen=True)
+class AgentSpec:
+    module_path: str
+    attr_name: str
+    doc: str
 
 
 class AgentRegistry:
@@ -19,6 +20,7 @@ class AgentRegistry:
     # Initialize as actual dictionaries, not just type annotations
     agent_func_mapping: ClassVar[dict[str, Callable]] = {}
     agent_doc_mapping: ClassVar[dict[str, str]] = {}
+    agent_spec_mapping: ClassVar[dict[str, AgentSpec]] = {}
 
     # Analyst KEYs
     ANALYST_KEYS: ClassVar[list[str]] = [
@@ -37,7 +39,18 @@ class AgentRegistry:
     @classmethod
     def get_agent_func_by_key(cls, key: str) -> Callable:
         """Get agent function by key."""
-        return cls.agent_func_mapping.get(key)
+        agent_func = cls.agent_func_mapping.get(key)
+        if agent_func is not None:
+            return agent_func
+
+        spec = cls.agent_spec_mapping.get(key)
+        if spec is None:
+            return None
+
+        module = import_module(spec.module_path)
+        agent_func = getattr(module, spec.attr_name)
+        cls.agent_func_mapping[key] = agent_func
+        return agent_func
 
     @classmethod
     def get_all_analyst_keys(cls) -> list[str]:
@@ -55,17 +68,29 @@ class AgentRegistry:
         return cls.agent_doc_mapping[key]
 
     @classmethod
-    def register_agent(cls, key: str, agent_func: Callable, agent_doc: str) -> None:
+    def register_agent(
+        cls,
+        key: str,
+        agent_doc: str,
+        agent_func: Callable | None = None,
+        *,
+        module_path: str | None = None,
+        attr_name: str | None = None,
+    ) -> None:
         """
         Register a new agent.
 
         Args:
             key: Unique identifier for the agent
-            agent_func: Function that implements the agent logic
             agent_doc: short description of the agent
         """
-        cls.agent_func_mapping[key] = agent_func
         cls.agent_doc_mapping[key] = agent_doc
+        if agent_func is not None:
+            cls.agent_func_mapping[key] = agent_func
+        elif module_path is not None and attr_name is not None:
+            cls.agent_spec_mapping[key] = AgentSpec(module_path=module_path, attr_name=attr_name, doc=agent_doc)
+        else:
+            raise ValueError("register_agent requires either agent_func or module_path/attr_name")
 
     @classmethod
     def run_registry(cls):
@@ -73,42 +98,48 @@ class AgentRegistry:
 
         cls.register_agent(
             key=AgentKey.PORTFOLIO,
-            agent_func=portfolio_agent,
             agent_doc="Portfolio manager making final trading decisions based on the signals from the analysts.",
+            agent_func=portfolio_agent,
         )
 
         cls.register_agent(
             key=AgentKey.COMPANY_NEWS,
-            agent_func=company_news_agent,
             agent_doc="Company news specialist analyzing company news and media coverage.",
+            module_path="decision_making.agents.analysts.company_news",
+            attr_name="company_news_agent",
         )
 
         cls.register_agent(
             key=AgentKey.TECHNICAL,
-            agent_func=technical_agent,
             agent_doc="Technical analysis specialist using multiple technical analysis strategies.",
+            module_path="decision_making.agents.analysts.technical",
+            attr_name="technical_agent",
         )
 
         cls.register_agent(
             key=AgentKey.SECTION_NEWS,
-            agent_func=section_news_agent,
             agent_doc="Section-aware news analyst that classifies news into categories and scores each independently.",
+            module_path="decision_making.agents.analysts.section_news",
+            attr_name="section_news_agent",
         )
 
         cls.register_agent(
             key=AgentKey.DUMMY,
-            agent_func=dummy_agent,
             agent_doc="Dummy analyst for debugging - returns neutral signal with no analysis.",
+            module_path="decision_making.agents.analysts.dummy",
+            attr_name="dummy_agent",
         )
 
         cls.register_agent(
             key=AgentKey.ML_MODEL_ONLINE,
-            agent_func=ml_model_agent_online,
             agent_doc="ML analyst with cross-sectional online learning: updates model daily from full SP500 cross-section before predicting the competition ticker.",
+            module_path="decision_making.agents.analysts.ml_model",
+            attr_name="ml_model_agent_online",
         )
 
         cls.register_agent(
             key=AgentKey.COMPANY_NEWS_ENHANCED,
-            agent_func=company_news_enhanced_agent,
             agent_doc="Enhanced company news analyst with per-article analysis and trend tracking.",
+            module_path="decision_making.agents.analysts.company_news_enhanced",
+            attr_name="company_news_enhanced_agent",
         )

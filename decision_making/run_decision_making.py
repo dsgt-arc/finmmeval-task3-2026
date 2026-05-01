@@ -46,6 +46,13 @@ def main():
     db_initialize(use_local_db=args.local_db)
     db = get_db()
     logger.info(f"Loading config for {cfg['exp_name']}, trading date: {args.trading_date}")
+    logger.info(
+        "Resolved config exp_name=%s tickers=%s planner_mode=%s sequential_mode=%s",
+        cfg.get("exp_name"),
+        cfg.get("tickers"),
+        cfg.get("planner_mode"),
+        cfg.get("sequential_mode"),
+    )
     config_id = load_portfolio_config(cfg, db)
     logger.info("Init DeepFund and run")
 
@@ -61,7 +68,7 @@ def main():
         time_cost = app.run(config_id)
         logger.info(f"DeepFund run completed in {time_cost:.2f} seconds")
     except Exception as e:
-        logger.error(f"Error during portfolio operations: {e}")
+        logger.exception(f"Error during portfolio operations: {e}")
         raise
 
 

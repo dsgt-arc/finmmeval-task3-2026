@@ -341,7 +341,8 @@ class StatsmodelsLogitModel(BaseModel):
         if self.use_regularization:
             self._result = self._model.fit_regularized(method=self.method, alpha=self.alpha, maxiter=self.maxiter, disp=True)
         else:
-            self._result = self._model.fit(maxiter=self.maxiter, disp=True, method=self.method)
+            # Standard MLE does not accept the regularization method string.
+            self._result = self._model.fit(maxiter=self.maxiter, disp=True)
 
         return self
 

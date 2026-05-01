@@ -79,6 +79,12 @@ class AgentWorkflow:
         # Route portfolio manager to end
         graph.add_edge(AgentKey.PORTFOLIO, END)
         workflow = graph.compile()
+        logger.info(
+            "Workflow graph compiled exp_name=%s sequential=%s analysts=%s",
+            self.exp_name,
+            self.sequential_mode,
+            self.current_analysts,
+        )
 
         return workflow
 
@@ -102,10 +108,19 @@ class AgentWorkflow:
     def run(self, config_id: str) -> float:
         """Run the workflow."""
         start_time = perf_counter()
+        logger.info(
+            "Workflow run start config_id=%s exp_name=%s tickers=%s planner_mode=%s sequential_mode=%s",
+            config_id,
+            self.exp_name,
+            self.tickers,
+            self.planner_mode,
+            self.sequential_mode,
+        )
 
         # will be updated by the output of workflow
         portfolio = self.init_portfolio
         for ticker in self.tickers:
+            logger.info("Workflow ticker start ticker=%s config_id=%s", ticker, config_id)
             self.load_analysts(ticker)
 
             # init FundState
@@ -125,11 +140,18 @@ class AgentWorkflow:
             try:
                 final_state = workflow.invoke(state)
             except Exception as e:
-                logger.error(f"Error running deep fund: {e}")
+                logger.exception("Error running deep fund ticker=%s config_id=%s", ticker, config_id)
                 raise RuntimeError(f"Failed to generate new portfolio {portfolio.id}") from e
 
             # update portfolio
             portfolio = self.update_portfolio_ticker(portfolio, ticker, final_state["decision"])
+            logger.info(
+                "Workflow ticker complete ticker=%s action=%s shares=%s price=%s",
+                ticker,
+                final_state["decision"].action,
+                final_state["decision"].shares,
+                final_state["decision"].price,
+            )
             logger.log_portfolio(f"{ticker} position update", portfolio)
 
             if self.planner_mode:
@@ -142,6 +164,12 @@ class AgentWorkflow:
 
         end_time = perf_counter()
         time_cost = end_time - start_time
+        logger.info(
+            "Workflow run complete config_id=%s exp_name=%s elapsed_seconds=%.2f",
+            config_id,
+            self.exp_name,
+            time_cost,
+        )
 
         return time_cost
 
@@ -159,8 +187,14 @@ class AgentWorkflow:
             portfolio.positions[ticker].shares += shares
             portfolio.cashflow -= price * shares
         elif action == Action.SELL:
-            portfolio.positions[ticker].shares -= shares
-            portfolio.cashflow += price * shares
+            total_portfolio_value = portfolio.cashflow + sum(
+                pos.value for pos in portfolio.positions.values()
+            )
+            max_short = int(max(0, total_portfolio_value) // price)
+            max_sell = portfolio.positions[ticker].shares + max_short
+            actual_sell = min(shares, max(0, max_sell))
+            portfolio.positions[ticker].shares -= actual_sell
+            portfolio.cashflow += price * actual_sell
 
         # Always recalculate position value with latest price
         portfolio.positions[ticker].value = round(price * portfolio.positions[ticker].shares, 2)
