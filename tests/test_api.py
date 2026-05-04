@@ -269,6 +269,30 @@ def test_worker_aggregates_actions_across_multiple_tickers(monkeypatch):
     assert decision_bridge_worker._latest_action("api_endpoint", ["TSLA", "BTC"]) == "HOLD"
 
 
+def test_worker_preserves_exp_name_from_config(monkeypatch):
+    monkeypatch.delenv("DECISION_BRIDGE_EXP_NAME", raising=False)
+
+    cfg = decision_bridge_worker._build_config(
+        {
+            "date": "2026-03-19",
+            "price": {"TSLA": 380.29998779296875},
+            "symbol": ["TSLA"],
+            "news": {"TSLA": ["Tesla-centred news on 2026-03-19"]},
+            "momentum": {"TSLA": "bearish"},
+            "10k": {"TSLA": []},
+            "10q": {"TSLA": []},
+            "history_price": {
+                "TSLA": [
+                    {"date": "2026-03-18", "price": 392.7799987792969},
+                    {"date": "2026-03-19", "price": 380.29998779296875},
+                ]
+            },
+        }
+    )
+
+    assert cfg["exp_name"] == "api"
+
+
 def test_bridge_normalizes_worker_output(monkeypatch, tmp_path):
     # This test checks the orchestration layer in isolation by pretending the
     # worker returned a lowercase action string.

@@ -29,5 +29,5 @@ workflow_analysts:
 # LLM model settings, refer to llm/inference.py: LLMConfig
 llm:
   provider: "OpenAI"
-  model: "gpt-4o-mini" # DeepSeek-V3
+  model: "gpt-5.4-mini" # DeepSeek-V3
   temperature: 0

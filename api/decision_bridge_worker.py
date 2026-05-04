@@ -69,7 +69,10 @@ def _build_config(payload: dict) -> dict:
     # Reuse the normal workflow config and override only the fields that come
     # from the competition request.
     cfg = _load_base_config()
-    cfg["exp_name"] = os.getenv("DECISION_BRIDGE_EXP_NAME", "api_endpoint")
+    # Preserve the YAML config name by default so Cloud Run serves the exact
+    # requested workflow configuration. An explicit env var can still override
+    # it when we intentionally want a different database namespace.
+    cfg["exp_name"] = os.getenv("DECISION_BRIDGE_EXP_NAME") or cfg.get("exp_name", "api_endpoint")
     cfg["tickers"] = _normalize_tickers(payload)
     cfg["trading_date"] = datetime.strptime(payload["date"], "%Y-%m-%d")
     cfg["planner_mode"] = cfg.get("planner_mode", False)
