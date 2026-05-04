@@ -1,4 +1,4 @@
-# Deep Fund Configuration
+# DS@GT StockTron Configuration
 exp_name: "tesla_btc_baseline"
 
 # Trading settings
@@ -6,6 +6,8 @@ cashflow: 100000
 tickers:
   - TSLA
   - BTC
+portfolio_mode: market_timing # risk_managed (paper portfolio), market_timing (pure signal implementation)
+enriched_memory: false # whether to consider past hit-rate in market_timing or not
 
 
 # Workflow execution mode
@@ -13,12 +15,11 @@ sequential_mode: false  # false for parallel, true for sequential execution
 
 # Analysts to run, refer to graph.constants.py
 workflow_analysts:
-  #- dummy
   - technical
   - company_news
 
 # LLM model settings, refer to llm/inference.py: LLMConfig
 llm:
   provider: "OpenAI"
-  model: "gpt-4.1-nano" # DeepSeek-V3
+  model: "gpt-4.1-nano"
   temperature: 0

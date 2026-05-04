@@ -1,7 +1,7 @@
 """Workflow runner executed by the bridge in a subprocess.
 
 Separation of concerns:
-- Boots the existing DeepFund workflow with the right config and DB state.
+- Boots the DS@GT StockTron workflow with the right config and DB state.
 - Uses the decision-making code exactly as it already exists.
 - Writes the final action to stdout as JSON for the bridge to consume.
 - Avoids any HTTP or request-validation logic.
@@ -143,7 +143,7 @@ def main() -> int:
         config_id = load_portfolio_config(cfg, db)
         logger.info("Worker config ready request_id=%s config_id=%s", request_id, config_id)
 
-        # This is the actual DeepFund workflow the other team owns.
+        # DS@GT StockTron workflow.
         logger.info("Worker starting workflow request_id=%s config_id=%s", request_id, config_id)
         workflow = AgentWorkflow(cfg, config_id)
         workflow.run(config_id)

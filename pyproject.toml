@@ -1,8 +1,12 @@
 [project]
 name = "finmmeval-task3-2026"
 version = "0.1.1"
-authors = [{ name = "Anthony Miyaguchi", email = "acmiyaguchi@gatech.edu" }]
-description = "DeepFund-style trading workflow plus a competition-facing HTTP API"
+authors = [
+    { name = "Maximilian Heil", email = "mheil7@gatech.edu" },
+    { name = "Boyang Gong", email = "bgong36@gatech.edu" },
+    { name = "Aleksandar Pramov", email = "apramov3@gatech.edu" },
+]
+description = "DS@GT StockTron — multi-agent trading workflow plus a competition-facing HTTP API"
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [

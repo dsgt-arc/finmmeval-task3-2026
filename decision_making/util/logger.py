@@ -7,8 +7,8 @@ import sys
 from graph.schema import AnalystSignal, Decision, Portfolio
 
 
-class DeepFundLogger:
-    """Logger for the Deep Fund application."""
+class StockTronLogger:
+    """Logger for DS@GT StockTron."""
 
     def __init__(self, log_level: str = "INFO"):
         """Initialize the logger.
@@ -23,7 +23,7 @@ class DeepFundLogger:
         pathlib.Path(self.log_dir).mkdir(exist_ok=True, parents=True)
 
         # Create logger
-        self.logger = logging.getLogger("deep_fund")
+        self.logger = logging.getLogger("dsgt_stonktron")
         self.logger.setLevel(self.log_level)
         self.logger.propagate = False
 
@@ -32,7 +32,7 @@ class DeepFundLogger:
 
         # Create file handler
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        log_file = os.path.join(self.log_dir, f"deepfund_{timestamp}.log")
+        log_file = os.path.join(self.log_dir, f"dsgt_stonktron_{timestamp}.log")
         file_handler = logging.FileHandler(log_file)
         file_handler.setLevel(self.log_level)
 
@@ -97,4 +97,4 @@ class DeepFundLogger:
 
 
 # Create a global logger instance
-logger = DeepFundLogger()
+logger = StockTronLogger()

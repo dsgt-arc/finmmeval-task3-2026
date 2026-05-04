@@ -24,10 +24,10 @@ def load_portfolio_config(cfg: dict[str, Any], db):
 
 
 def main():
-    """Main entry point for the DeepFund System."""
+    """Main entry point for DS@GT StockTron."""
 
     # Parse command line arguments
-    parser = argparse.ArgumentParser(description="Run the DeepFund System")
+    parser = argparse.ArgumentParser(description="Run DS@GT StockTron")
     parser.add_argument("--config", type=str, required=True, help="Path to configuration file")
     parser.add_argument("--trading-date", type=str, required=True, help="Trading date in format YYYY-MM-DD")
     parser.add_argument("--local-db", action="store_true", help="Use local SQLite database")
@@ -47,7 +47,7 @@ def main():
         cfg.get("sequential_mode"),
     )
     config_id = load_portfolio_config(cfg, db)
-    logger.info("Init DeepFund and run")
+    logger.info("Init DS@GT StockTron and run")
 
     # make sure trading date is in chronological order in DB portfolio table
     latest_trading_date = db.get_latest_trading_date(config_id)
@@ -59,7 +59,7 @@ def main():
     try:
         app = AgentWorkflow(cfg, config_id)
         time_cost = app.run(config_id)
-        logger.info(f"DeepFund run completed in {time_cost:.2f} seconds")
+        logger.info(f"DS@GT StockTron run completed in {time_cost:.2f} seconds")
     except Exception as e:
         logger.exception(f"Error during portfolio operations: {e}")
         raise

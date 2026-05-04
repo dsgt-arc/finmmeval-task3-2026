@@ -1,12 +1,10 @@
-# Deep Fund Configuration
+# DS@GT StockTron Configuration
 exp_name: "ablation_enhanced_memory"
 
 # Trading settings
 tickers:
   - TSLA
   - BTC
-
-# Memory modus of portfolio manager
 enriched_memory: true  # false for standard memory, true for enriched memory with past hit rate
 
 # Workflow execution mode
@@ -20,5 +18,5 @@ workflow_analysts:
 # LLM model settings, refer to llm/inference.py: LLMConfig
 llm:
   provider: "OpenAI"
-  model: "gpt-4.1-nano" # DeepSeek-V3
+  model: "gpt-4.1-nano"
   temperature: 0

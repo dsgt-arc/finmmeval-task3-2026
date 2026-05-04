@@ -1,5 +1,5 @@
 """
-SQL query functions for extracting data from the DeepFund SQLite database.
+SQL query functions for extracting data from the DS@GT StockTron SQLite database.
 """
 
 from datetime import datetime
