@@ -28,7 +28,7 @@ def portfolio_agent(state: FundState):
         current_price = load_specific_data(symbol=ticker, date=historic_date, type="current_price")
     except Exception as e:
         logger.error(f"Failed to fetch price data for {ticker}: {e}")
-        raise RuntimeError("Failed to make decision")
+        raise RuntimeError("Failed to make decision") from e
 
     decision_memory = db.get_decision_memory(exp_name, ticker, thresholds["decision_memory_limit"])
 
