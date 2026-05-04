@@ -4,7 +4,7 @@ from typing import Any
 from agents.planner import planner_agent
 from agents.registry import AgentRegistry
 from graph.constants import AgentKey
-from graph.schema import FundState
+from graph.schema import Action, Decision, FundState, Portfolio, Position
 from langgraph.graph import END, START, StateGraph
 from util.db_helper import get_db
 from util.logger import logger
@@ -66,7 +66,15 @@ class AgentWorkflow:
                 graph.add_edge(analyst, AgentKey.PORTFOLIO)
 
         graph.add_edge(AgentKey.PORTFOLIO, END)
-        return graph.compile()
+        workflow = graph.compile()
+        logger.info(
+            "Workflow graph compiled exp_name=%s sequential=%s analysts=%s",
+            self.exp_name,
+            self.sequential_mode,
+            self.current_analysts,
+        )
+
+        return workflow
 
     def load_analysts(self, ticker: str):
         """Load analysts for the current ticker."""
@@ -84,8 +92,17 @@ class AgentWorkflow:
     def run(self, config_id: str) -> float:
         """Run the workflow."""
         start_time = perf_counter()
+        logger.info(
+            "Workflow run start config_id=%s exp_name=%s tickers=%s planner_mode=%s sequential_mode=%s",
+            config_id,
+            self.exp_name,
+            self.tickers,
+            self.planner_mode,
+            self.sequential_mode,
+        )
 
         for ticker in self.tickers:
+            logger.info("Workflow ticker start ticker=%s config_id=%s", ticker, config_id)
             self.load_analysts(ticker)
 
             state = FundState(
@@ -102,14 +119,52 @@ class AgentWorkflow:
             try:
                 final_state = workflow.invoke(state)
             except Exception as e:
-                logger.error(f"Error running workflow: {e}")
+                logger.exception("Error running deep fund ticker=%s config_id=%s", ticker, config_id)
                 raise RuntimeError(f"Failed to run workflow for {ticker}") from e
 
             decision = final_state["decision"]
+            logger.info(
+                "Workflow ticker complete ticker=%s action=%s shares=%s price=%s",
+                ticker,
+                final_state["decision"].action,
+                final_state["decision"].shares,
+                final_state["decision"].price,
+            )
             self.db.save_decision(self.portfolio_id, ticker, "market_timing", decision, self.trading_date)
 
             if self.planner_mode:
                 self.current_analysts = None
 
         end_time = perf_counter()
-        return end_time - start_time
+        time_cost = end_time - start_time
+
+        return time_cost
+
+    def update_portfolio_ticker(self, portfolio: Portfolio, ticker: str, decision: Decision) -> Portfolio:
+        """Update the ticker asset in the portfolio."""
+
+        action = decision.action
+        shares = decision.shares
+        price = decision.price
+
+        if ticker not in portfolio.positions:
+            portfolio.positions[ticker] = Position(shares=0, value=0)
+
+        if action == Action.BUY:
+            portfolio.positions[ticker].shares += shares
+            portfolio.cashflow -= price * shares
+        elif action == Action.SELL:
+            total_portfolio_value = portfolio.cashflow + sum(pos.value for pos in portfolio.positions.values())
+            max_short = int(max(0, total_portfolio_value) // price)
+            max_sell = portfolio.positions[ticker].shares + max_short
+            actual_sell = min(shares, max(0, max_sell))
+            portfolio.positions[ticker].shares -= actual_sell
+            portfolio.cashflow += price * actual_sell
+
+        # Always recalculate position value with latest price
+        portfolio.positions[ticker].value = round(price * portfolio.positions[ticker].shares, 2)
+
+        # round cashflow
+        portfolio.cashflow = round(portfolio.cashflow, 2)
+
+        return portfolio

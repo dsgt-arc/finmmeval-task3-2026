@@ -1,6 +1,7 @@
 from datetime import datetime
 import logging
 import os
+import sys
 
 from graph.schema import AnalystSignal, Decision
 
@@ -23,6 +24,10 @@ class DeepFundLogger:
         # Create logger
         self.logger = logging.getLogger("deep_fund")
         self.logger.setLevel(self.log_level)
+        self.logger.propagate = False
+
+        if self.logger.handlers:
+            return
 
         # Create file handler
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -30,12 +35,13 @@ class DeepFundLogger:
         file_handler = logging.FileHandler(log_file)
         file_handler.setLevel(self.log_level)
 
-        # Create console handler
-        console_handler = logging.StreamHandler()
+        # Send console logs to stderr so subprocess JSON written to stdout
+        # stays clean for the bridge to parse.
+        console_handler = logging.StreamHandler(stream=sys.stderr)
         console_handler.setLevel(self.log_level)
 
         # Create formatter
-        formatter = logging.Formatter("%(levelname)s - %(message)s")
+        formatter = logging.Formatter("%(asctime)s | %(levelname)s | %(name)s | %(message)s")
         file_handler.setFormatter(formatter)
         console_handler.setFormatter(formatter)
 
@@ -43,21 +49,25 @@ class DeepFundLogger:
         self.logger.addHandler(file_handler)
         self.logger.addHandler(console_handler)
 
-    def debug(self, message: str):
+    def debug(self, message: str, *args, **kwargs):
         """Log a debug message."""
-        self.logger.debug(message)
+        self.logger.debug(message, *args, **kwargs)
 
-    def info(self, message: str):
+    def info(self, message: str, *args, **kwargs):
         """Log an info message."""
-        self.logger.info(message)
+        self.logger.info(message, *args, **kwargs)
 
-    def warning(self, message: str):
+    def warning(self, message: str, *args, **kwargs):
         """Log a warning message."""
-        self.logger.warning(message)
+        self.logger.warning(message, *args, **kwargs)
 
-    def error(self, message: str):
+    def error(self, message: str, *args, **kwargs):
         """Log an error message."""
-        self.logger.error(message)
+        self.logger.error(message, *args, **kwargs)
+
+    def exception(self, message: str, *args, **kwargs):
+        """Log an error message with exception information."""
+        self.logger.exception(message, *args, **kwargs)
 
     def log_agent_status(self, agent_name: str, ticker: str, status: str):
         """Log the status of an agent."""

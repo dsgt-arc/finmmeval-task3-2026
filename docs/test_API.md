@@ -179,6 +179,13 @@ If `make` is not installed, use the raw `uv run ...` commands shown above instea
   3-minute organizer limit.
 - The server uses the `PORT` environment variable if your hosting platform provides one.
 - For public deployment, you still need a stable HTTPS URL or container service.
+- The Docker image bakes in the current `data/data/*.parquet` competition files,
+  so it does not need to re-download them at startup.
+- If you want to test the service from another machine, expose port `8080` and
+  point `curl` or the organizer endpoint at the deployed host name or public IP.
+- For a one-command Cloud Run deploy that also handles `OPENAI_API_KEY`, see
+  [docs/deployment.md](./deployment.md). The helper now stages a minimal source
+  tree and lets Cloud Run build and roll the new revision in-region.
 
 ## Robustness Notes
 

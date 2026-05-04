@@ -4,7 +4,11 @@ from pathlib import Path
 import sys
 
 import psutil
-import torch
+
+try:
+    import torch
+except Exception:  # pragma: no cover - optional accelerator dependency
+    torch = None
 
 
 def get_system_info() -> str:
@@ -21,12 +25,12 @@ def get_system_info() -> str:
     mem_str = f"MEM: {used_mem:6.2f}GB/{total_mem:7.2f}GB"
 
     # GPU information with fixed-width formatting
-    if torch.cuda.is_available():
+    if torch is not None and torch.cuda.is_available():
         gpu = torch.cuda.get_device_properties(0)
         gpu_usage = torch.cuda.memory_allocated(0) / gpu.total_memory * 100
         # Assuming GPU name length varies, but CPU and MEM are fixed
         gpu_str = f" | GPU: {gpu.name}, GPU Usage: {gpu_usage:6.2f}%"
-    elif torch.backends.mps.is_available():
+    elif torch is not None and torch.backends.mps.is_available():
         gpu_usage = torch.mps.current_allocated_memory() / torch.mps.recommended_max_memory() * 100
         # Assuming GPU name length varies, but CPU and MEM are fixed
         gpu_str = f" | GPU: mps, GPU Usage: {gpu_usage:6.2f}%"
