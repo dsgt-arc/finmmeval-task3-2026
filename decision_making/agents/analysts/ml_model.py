@@ -88,7 +88,7 @@ def ml_model_agent_online(state: FundState):
     ticker = state["ticker"]
     trading_date = state["trading_date"]
     llm_config = state["llm_config"]
-    portfolio_id = state["portfolio"].id
+    portfolio_id = state["portfolio_id"]
     prev_date = _prev_trading_day(trading_date)
 
     # Get db instance

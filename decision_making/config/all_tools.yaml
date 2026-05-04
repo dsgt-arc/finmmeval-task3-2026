@@ -1,5 +1,5 @@
 # Deep Fund Configuration
-exp_name: "abelation_ml_model"
+exp_name: "all_tools_tsla_btc"
 
 # Trading settings
 cashflow: 100000
@@ -9,15 +9,16 @@ tickers:
 
 
 # Workflow execution mode
-sequential_mode: false  # false for parallel, true for sequential execution
+sequential_mode: true  # false for parallel, true for sequential execution
 
 # Analysts to run, refer to graph.constants.py
 workflow_analysts:
   #- dummy
-  #- technical
+  - technical
   - company_news
-  #- company_news_enhanced
+  - company_news_enhanced
   - ml_model_agent_online
+  - section_news
 
 # LLM model settings, refer to llm/inference.py: LLMConfig
 llm:

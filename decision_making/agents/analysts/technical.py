@@ -49,7 +49,7 @@ def technical_agent(state: FundState):
     ticker = state["ticker"]
     trading_date = state["trading_date"]
     llm_config = state["llm_config"]
-    portfolio_id = state["portfolio"].id
+    portfolio_id = state["portfolio_id"]
 
     # Get db instance
     db = get_db()

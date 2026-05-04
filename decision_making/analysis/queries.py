@@ -57,14 +57,14 @@ def get_all_portfolio_records(db: SQLiteDB, config_id: str, filter_corrupted: bo
 
 def get_all_decisions(db: SQLiteDB, config_id: str) -> pl.DataFrame:
     """
-    Get all trading decisions with portfolio context.
+    Get all trading decisions for a config.
 
     Args:
         db: SQLiteDB instance
         config_id: Configuration ID
 
     Returns:
-        Polars DataFrame with decision details and portfolio context
+        Polars DataFrame with columns: id, trading_date, ticker, action, shares, price, justification
     """
     conn = db._get_connection()
     try:
@@ -76,9 +76,7 @@ def get_all_decisions(db: SQLiteDB, config_id: str) -> pl.DataFrame:
                 d.action,
                 d.shares,
                 d.price,
-                d.justification,
-                p.total_assets as portfolio_value_at_decision,
-                p.cashflow as cashflow_at_decision
+                d.justification
             FROM decision d
             JOIN portfolio p ON d.portfolio_id = p.id
             WHERE p.config_id = ?
@@ -150,9 +148,7 @@ def get_decision_summary(db: SQLiteDB, config_id: str) -> pl.DataFrame:
                 d.ticker,
                 d.action,
                 COUNT(*) as count,
-                SUM(d.shares) as total_shares,
-                AVG(d.price) as avg_price,
-                SUM(d.shares * d.price) as total_value
+                AVG(d.price) as avg_price
             FROM decision d
             JOIN portfolio p ON d.portfolio_id = p.id
             WHERE p.config_id = ?
@@ -208,7 +204,7 @@ def get_signal_summary(db: SQLiteDB, config_id: str) -> pl.DataFrame:
 
 def check_data_quality(db: SQLiteDB, config_id: str) -> dict[str, Any]:
     """
-    Check for data quality issues in the database.
+    Check data quality for a config — counts decisions and signals per trading day.
 
     Args:
         db: SQLiteDB instance
@@ -221,30 +217,38 @@ def check_data_quality(db: SQLiteDB, config_id: str) -> dict[str, Any]:
     try:
         cursor = conn.cursor()
 
-        # Check for corrupted records
         cursor.execute(
             """
             SELECT
-                COUNT(*) as total_records,
-                SUM(CASE WHEN total_assets <= 0 THEN 1 ELSE 0 END) as corrupted_records,
-                MIN(CASE WHEN total_assets > 0 THEN trading_date END) as first_valid_date,
-                MAX(CASE WHEN total_assets > 0 THEN trading_date END) as last_valid_date,
-                MIN(CASE WHEN total_assets <= 0 THEN trading_date END) as first_corrupted_date
-            FROM portfolio
-            WHERE config_id = ?
+                COUNT(DISTINCT p.id) as trading_days,
+                COUNT(d.id) as total_decisions,
+                MIN(p.trading_date) as first_date,
+                MAX(p.trading_date) as last_date
+            FROM portfolio p
+            LEFT JOIN decision d ON d.portfolio_id = p.id
+            WHERE p.config_id = ?
         """,
             (config_id,),
         )
         row = cursor.fetchone()
 
+        cursor.execute(
+            """
+            SELECT COUNT(s.id) as total_signals
+            FROM signal s
+            JOIN portfolio p ON s.portfolio_id = p.id
+            WHERE p.config_id = ?
+        """,
+            (config_id,),
+        )
+        sig_row = cursor.fetchone()
+
         return {
-            "total_records": row["total_records"],
-            "valid_records": row["total_records"] - row["corrupted_records"],
-            "corrupted_records": row["corrupted_records"],
-            "first_valid_date": row["first_valid_date"],
-            "last_valid_date": row["last_valid_date"],
-            "first_corrupted_date": row["first_corrupted_date"],
-            "corruption_percentage": (row["corrupted_records"] / row["total_records"] * 100) if row["total_records"] > 0 else 0,
+            "trading_days": row["trading_days"],
+            "total_decisions": row["total_decisions"],
+            "total_signals": sig_row["total_signals"],
+            "first_date": row["first_date"],
+            "last_date": row["last_date"],
         }
     finally:
         conn.close()

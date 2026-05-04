@@ -20,19 +20,7 @@ class BaseDB(ABC):
         pass
 
     @abstractmethod
-    def get_latest_portfolio(self, config_id: str) -> dict:
-        pass
-
-    @abstractmethod
-    def create_portfolio(self, config_id: str, cashflow: float, trading_date: datetime) -> str:
-        pass
-
-    @abstractmethod
-    def copy_portfolio(self, config_id: str, portfolio: dict, trading_date: datetime) -> str:
-        pass
-
-    @abstractmethod
-    def update_portfolio(self, config_id: str, portfolio: dict, trading_date: datetime) -> bool:
+    def create_portfolio_stub(self, config_id: str, trading_date: datetime) -> str:
         pass
 
     @abstractmethod

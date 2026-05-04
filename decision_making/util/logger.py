@@ -3,7 +3,7 @@ import logging
 import os
 import sys
 
-from graph.schema import AnalystSignal, Decision, Portfolio, PositionRisk
+from graph.schema import AnalystSignal, Decision
 
 
 class DeepFundLogger:
@@ -88,15 +88,6 @@ class DeepFundLogger:
         msg = f"Agent: {agent_name} | Ticker: {ticker} | Signal: {s.signal} | Justification: {s.justification}"
         self.info(msg)
 
-    def log_portfolio(self, msg: str, portfolio: Portfolio):
-        """Log the portfolio."""
-        asset_value = portfolio.cashflow + sum(position.value for position in portfolio.positions.values())
-        self.info(f"{msg}: {portfolio} | Total Asset Value: {asset_value:.2f}")
-
-    def log_risk(self, ticker: str, position_risk: PositionRisk):
-        """Log the risk assessment of a ticker."""
-        msg = f"Risk Control for {ticker}| Optimal Position Ratio: {position_risk.optimal_position_ratio} | Justification: {position_risk.justification}"
-        self.info(msg)
 
 
 # Create a global logger instance
