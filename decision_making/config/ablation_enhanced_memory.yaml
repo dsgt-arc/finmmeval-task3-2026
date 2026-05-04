@@ -1,10 +1,10 @@
 # Deep Fund Configuration
-exp_name: "debug_ml"
+exp_name: "ablation_enhanced_memory"
 
 # Trading settings
-cashflow: 100000
 tickers:
   - TSLA
+  - BTC
 
 
 # Workflow execution mode
@@ -12,10 +12,11 @@ sequential_mode: false  # false for parallel, true for sequential execution
 
 # Analysts to run, refer to graph.constants.py
 workflow_analysts:
-  - ml_model_agent_online
-
+  - technical
+  - company_news
 
 # LLM model settings, refer to llm/inference.py: LLMConfig
 llm:
   provider: "OpenAI"
-  model: "gpt-4o-mini" # DeepSeek-V3
+  model: "gpt-4.1-nano" # DeepSeek-V3
+  temperature: 0
