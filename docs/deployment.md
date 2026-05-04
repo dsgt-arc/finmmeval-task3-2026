@@ -1,13 +1,14 @@
 # Deployment Guide
 
-You will operate a single deployment. The workflow config determines whether
-that one service runs the plain API analysts or the ML-enabled analyst set:
+You will operate a single deployment. The workflow config determines which
+analysts the one service runs:
 
-- **Plain API config**: the default `decision_making/config/api.yaml` workflow
-  runs `technical` and `company_news`.
-- **ML-enabled config**: if the selected YAML includes `ml_model_agent_online`,
-  the deployment helper will make sure `output/rf_return_model/` exists and
-  will train the missing artifacts before packaging the service.
+- The default `decision_making/config/api.yaml` workflow currently runs
+  `technical`, `company_news`, `company_news_enhanced`, `section_news`, and
+  `ml_model_agent_online`.
+- If the selected YAML includes `ml_model_agent_online`, the deployment helper
+  will make sure `output/rf_return_model/` exists and will train the missing
+  artifacts before packaging the service.
 
 The simplest production path is Google Cloud Run with one warm instance, a
 secret-backed `OPENAI_API_KEY`, and a Docker image built from this repo.
@@ -79,6 +80,7 @@ context predictable and ensures the file exists inside the container image.
 
 - the Python app code
 - the competition parquet files under `data/data/`
+- the SP500 cache under `data/data_sp500/` when the ML analyst is enabled
 - `output/rf_return_model/` when the ML analyst is enabled and the artifact is
   needed
 
@@ -140,6 +142,8 @@ The deployed container only needs a small set of environment variables:
 
 - `OPENAI_API_KEY` - injected from Secret Manager.
 - `DECISION_BRIDGE_CONFIG` - optional override if you deploy a non-default YAML.
+  The workflow preserves the YAML `exp_name` by default, so the deployed config
+  stays aligned with the file you ship unless you explicitly override it.
 - `PORT` - provided by the host platform; the app reads it automatically.
 
 Everything else is either baked into the image or handled internally by the
