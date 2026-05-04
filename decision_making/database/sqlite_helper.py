@@ -465,5 +465,3 @@ class SQLiteDB(BaseDB):
                 conn.close()
 
 
-# init global instance
-# sqlite_db = SQLiteDB()
