@@ -193,7 +193,8 @@ If `make` is not installed, use the raw `uv run ...` commands shown above instea
   `news`, `momentum`, `10k`, `10q`, and `history_price` entries that may be
   missing or `null` on a given day.
 - The default analyst mix is defined in `decision_making/config/api.yaml`.
-  That file currently runs `technical` and `company_news`.
+  That file currently runs `technical`, `company_news`,
+  `company_news_enhanced`, `section_news`, and `ml_model_agent_online`.
 - We added regression coverage for the common organizer cases:
   - TSLA with populated `10k` and `10q`
   - BTC with `10k = null` and `10q = null`
