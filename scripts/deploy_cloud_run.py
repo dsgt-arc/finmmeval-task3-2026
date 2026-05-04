@@ -31,6 +31,8 @@ DEFAULT_CONFIG = Path("decision_making/config/api.yaml")
 DEFAULT_REGION = "us-central1"
 DEFAULT_SERVICE = "finmmeval-task3-2026"
 DEFAULT_SECRET_NAME = "OPENAI_API_KEY"
+DEFAULT_CPU = "2"
+DEFAULT_MEMORY = "8Gi"
 ML_ANALYST_NAME = "ml_model_agent_online"
 ML_MODEL_DIR = Path("output") / "rf_return_model"
 ML_REQUIRED_FILES = [
@@ -350,6 +352,10 @@ def deploy_to_cloud_run(
         "1",
         "--max-instances",
         "1",
+        "--cpu",
+        DEFAULT_CPU,
+        "--memory",
+        DEFAULT_MEMORY,
         "--concurrency",
         "1",
         "--timeout",

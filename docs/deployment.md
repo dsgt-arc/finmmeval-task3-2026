@@ -14,7 +14,9 @@ The simplest production path is Google Cloud Run with one warm instance, a
 secret-backed `OPENAI_API_KEY`, and a Docker image built from this repo.
 The helper stages a minimal build context locally and hands that staged source
 to Cloud Run, which performs the container build and then rolls the service to
-the new revision.
+the new revision. For the current ML-enabled `api.yaml`, the deployment helper
+uses `2` CPUs and `8Gi` of memory because the combined API, workflow, and
+subprocess worker path can exceed 4 GiB during a live competition request.
 
 ## Required Local Secrets
 
