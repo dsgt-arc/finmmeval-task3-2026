@@ -2,10 +2,9 @@ from datetime import datetime
 import operator
 from typing import Annotated, Any
 
+from graph.constants import Action, Signal
 from pydantic import BaseModel, Field
 from typing_extensions import TypedDict
-
-from graph.constants import Action, Signal
 
 
 class AnalystSignal(BaseModel):
@@ -69,12 +68,8 @@ class FundState(TypedDict):
     ticker: str = Field(description="Ticker in-the-flow.")
     llm_config: dict[str, Any] = Field(description="LLM configuration.")
     portfolio_id: str = Field(description="Portfolio stub id (FK anchor for DB logging).")
+    api_payload: dict | None  # raw competition API payload (or None during backtests); analysts pull what they need
 
-    # raw competition API payload (or None during backtests); analysts pull what they need
-    api_payload: dict | None
+    analyst_signals: Annotated[list[AnalystSignal], operator.add]  # updated by workflow: ticker -> signal of all analysts
 
-    # updated by workflow
-    # ticker -> signal of all analysts
-    analyst_signals: Annotated[list[AnalystSignal], operator.add]
-    # portfolio manager output
-    decision: Decision
+    decision: Decision  # portfolio manager output

@@ -1,7 +1,6 @@
 from time import perf_counter
 from typing import Any
 
-from agents.planner import planner_agent
 from agents.registry import AgentRegistry
 from graph.constants import AgentKey
 from graph.schema import Action, Decision, FundState, Portfolio, Position
@@ -27,7 +26,6 @@ class AgentWorkflow:
         self.portfolio_id = portfolio_id
         logger.info(f"Portfolio stub ID: {self.portfolio_id}")
 
-        self.planner_mode = config.get("planner_mode", False)
         self.sequential_mode = config.get("sequential_mode", False)
         self.enriched_memory = config.get("enriched_memory", False)
         self.api_payload = config.get("api_payload")
@@ -80,14 +78,8 @@ class AgentWorkflow:
 
     def load_analysts(self, ticker: str):
         """Load analysts for the current ticker."""
-        if self.planner_mode:
-            logger.info("Using planner agent to select analysts from verified list")
-            self.current_analysts = planner_agent(ticker, self.llm_config, self.workflow_analysts)
-            if not self.current_analysts:
-                raise ValueError("No analysts selected by planner")
-        else:
-            logger.info("Using all verified analysts")
-            self.current_analysts = self.workflow_analysts.copy()
+        logger.info("Using all verified analysts")
+        self.current_analysts = self.workflow_analysts.copy()
 
         logger.info(f"Active analysts for {ticker}: {self.current_analysts}")
 
@@ -95,11 +87,10 @@ class AgentWorkflow:
         """Run the workflow."""
         start_time = perf_counter()
         logger.info(
-            "Workflow run start config_id=%s exp_name=%s tickers=%s planner_mode=%s sequential_mode=%s",
+            "Workflow run start config_id=%s exp_name=%s tickers=%s sequential_mode=%s",
             config_id,
             self.exp_name,
             self.tickers,
-            self.planner_mode,
             self.sequential_mode,
         )
 
@@ -133,9 +124,6 @@ class AgentWorkflow:
                 final_state["decision"].price,
             )
             self.db.save_decision(self.portfolio_id, ticker, "market_timing", decision, self.trading_date)
-
-            if self.planner_mode:
-                self.current_analysts = None
 
         end_time = perf_counter()
         time_cost = end_time - start_time

@@ -25,12 +25,8 @@ class AgentRegistry:
     # Analyst KEYs
     ANALYST_KEYS: ClassVar[list[str]] = [
         AgentKey.TECHNICAL,
-        AgentKey.FUNDAMENTAL,
-        AgentKey.INSIDER,
         AgentKey.COMPANY_NEWS,
         AgentKey.SECTION_NEWS,
-        AgentKey.MACROECONOMIC,
-        AgentKey.POLICY,
         AgentKey.DUMMY,
         AgentKey.COMPANY_NEWS_ENHANCED,
         AgentKey.ML_MODEL_ONLINE,
@@ -140,7 +136,7 @@ class AgentRegistry:
             key=AgentKey.ML_MODEL_ONLINE,
             agent_doc="ML analyst with cross-sectional online learning: updates model daily from full SP500 cross-section before predicting the competition ticker.",
             module_path="agents.analysts.ml_model",
-            attr_name="ml_model_agent_online",
+            attr_name="ml_model_online",
         )
 
         cls.register_agent(
