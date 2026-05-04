@@ -29,6 +29,7 @@ class AgentWorkflow:
 
         self.planner_mode = config.get("planner_mode", False)
         self.sequential_mode = config.get("sequential_mode", False)
+        self.enriched_memory = config.get("enriched_memory", False)
         self.api_payload = config.get("api_payload")
 
         if not config.get("workflow_analysts"):
@@ -47,8 +48,9 @@ class AgentWorkflow:
         """Build the workflow."""
         graph = StateGraph(FundState)
 
-        portfolio_agent = AgentRegistry.get_agent_func_by_key(AgentKey.PORTFOLIO)
-        graph.add_node(AgentKey.PORTFOLIO, portfolio_agent)
+        portfolio_key = AgentKey.PORTFOLIO_ENRICHED_MEMORY if self.enriched_memory else AgentKey.PORTFOLIO
+        portfolio_func = AgentRegistry.get_agent_func_by_key(portfolio_key)
+        graph.add_node(portfolio_key, portfolio_func)
 
         prev_node = START
         if self.sequential_mode:
@@ -57,15 +59,15 @@ class AgentWorkflow:
                 graph.add_node(analyst, agent_func)
                 graph.add_edge(prev_node, analyst)
                 prev_node = analyst
-            graph.add_edge(prev_node, AgentKey.PORTFOLIO)
+            graph.add_edge(prev_node, portfolio_key)
         else:
             for analyst in self.current_analysts:
                 agent_func = AgentRegistry.get_agent_func_by_key(analyst)
                 graph.add_node(analyst, agent_func)
                 graph.add_edge(prev_node, analyst)
-                graph.add_edge(analyst, AgentKey.PORTFOLIO)
+                graph.add_edge(analyst, portfolio_key)
 
-        graph.add_edge(AgentKey.PORTFOLIO, END)
+        graph.add_edge(portfolio_key, END)
         workflow = graph.compile()
         logger.info(
             "Workflow graph compiled exp_name=%s sequential=%s analysts=%s",

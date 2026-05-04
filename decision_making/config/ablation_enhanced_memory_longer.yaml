@@ -6,6 +6,8 @@ tickers:
   - TSLA
   - BTC
 
+# Memory modus of portfolio manager
+enriched_memory: true  # false for standard memory, true for enriched memory with past hit rate
 
 # Workflow execution mode
 sequential_mode: false  # false for parallel, true for sequential execution

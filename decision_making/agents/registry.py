@@ -1,9 +1,9 @@
 from collections.abc import Callable
-from importlib import import_module
 from dataclasses import dataclass
+from importlib import import_module
 from typing import ClassVar
 
-from agents.portfolio_manager import portfolio_agent
+from agents.portfolio_manager import portfolio_agent, portfolio_agent_enriched_memory
 from graph.constants import AgentKey
 
 
@@ -95,6 +95,12 @@ class AgentRegistry:
     @classmethod
     def run_registry(cls):
         """Run the registry."""
+
+        cls.register_agent(
+            key=AgentKey.PORTFOLIO_ENRICHED_MEMORY,
+            agent_doc="Portfolio manager making final trading decisions based on the signals from the analysts and past hit rate.",
+            agent_func=portfolio_agent_enriched_memory,
+        )
 
         cls.register_agent(
             key=AgentKey.PORTFOLIO,

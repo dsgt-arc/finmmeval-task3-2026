@@ -6,17 +6,7 @@ You must provide your analysis as a structured output with the following fields:
 Your response should be well-reasoned and consider all aspects of the analysis.
 """
 
-FUNDAMENTAL_PROMPT = (
-    """
-You are a financial analyst evaluating ticker based on fundamental analysis.
-
-The following fundamentals have been generated from our analysis:
-{fundamentals}
-
-"""
-    + ANALYST_OUTPUT_FORMAT
-)
-
+# TECHNICAL AGENT
 TECHNICAL_PROMPT = (
     """
 You are a technical analyst evaluating ticker using multiple technical analysis strategies.
@@ -49,6 +39,7 @@ Here are recent {num_trades} insider trades:
     + ANALYST_OUTPUT_FORMAT
 )
 
+# COMPANY NEWS AGENT
 COMPANY_NEWS_PROMPT = (
     """
 You are a company news analyst evaluating ticker based on recent news. Title, publisher, and publish time are provided.
@@ -60,6 +51,7 @@ Here are recent news:
     + ANALYST_OUTPUT_FORMAT
 )
 
+# COMPANY NEWS ENHANCED AGENT
 RELEVANCE_CHECK_PROMPT = """
 You are screening news content to determine if it's relevant for predicting next-day asset price movements for {ticker}.
 
@@ -112,33 +104,7 @@ Provide structured output:
 - article_preview: First 50 characters of the article text
 """
 
-
-MACROECONOMIC_PROMPT = (
-    """
-You are senior macroeconomic analyst, conduct a comprehensive evaluation of current macroeconomic conditions.
-
-Here are the macroeconomic indicators of past periods:
-{economic_indicators}
-
-"""
-    + ANALYST_OUTPUT_FORMAT
-)
-
-POLICY_PROMPT = (
-    """
-You are a policy analyst. Evaluate the given news related to fiscal and monetary policy, and classify their short-term (6-month) economic impact.
-
-Here are the fiscal policy:
-{fiscal_policy}
-
-Here are the monetary policy:
-{monetary_policy}
-
-"""
-    + ANALYST_OUTPUT_FORMAT
-)
-
-
+# ML MODEL AGENT
 ML_MODEL_PROMPT = """
 You are a quantitative analyst evaluating a stock ticker using a machine learning model.
 
@@ -155,7 +121,8 @@ Provide structured output with the following fields:
 - signal_strength: Float from -1.0 (strong bearish) to +1.0 (strong bullish) reflecting your conviction based on the predicted probability
 """
 
-MARKET_TIMING_PROMPT = """
+# PORTFOLIO MANAGER AGENT
+MARKET_TIMING_PROMPT_W_MEMORY = """
 You are a market timing agent. Based on analyst signals and recent decision history,
 decide whether to be LONG (Buy), SHORT (Sell), or NEUTRAL (Hold) on {ticker}.
 
@@ -185,24 +152,33 @@ You must provide your decision as a structured output with the following fields:
 - justification: A brief explanation of your decision
 """
 
-PLANNER_PROMPT = """
-You are a planner agent that decides which analysts to perform based on the your knowledge of the ticker and features of analysts.
+MARKET_TIMING_PROMPT = """
+You are a market timing agent. Based on analyst signals and recent decision history,
+decide whether to be LONG (Buy), SHORT (Sell), or NEUTRAL (Hold) on {ticker}.
 
-Here is the ticker:
-{ticker}
+Analyst signals:
+{analyst_signals}
 
-Here are the available analysts:
-{analysts}
+Signal balance: {signal_balance} (positive = net bullish, negative = net bearish)
+
+Recent decision history:
+{decision_memory}
+
+Current price: {current_price}
+
+Decision rules:
+- When the signal balance is clearly positive (≥ +1), prefer Buy.
+- When the signal balance is clearly negative (≤ -1), prefer Sell.
+- Reserve Hold only when signals are genuinely split (balance near 0 with conflicting rationales).
 
 You must provide your decision as a structured output with the following fields:
-- analysts: selected analyst_name list
-- justification: brief explanation of your selection
+- action: One of ["Buy", "Sell", "Hold"]
+- shares: Set to 1 for Buy or Sell, 0 for Hold
+- price: The current price of the ticker
+- justification: A brief explanation of your decision
 """
 
-# ---------------------------------------------------------------------------
-# Section news prompts
-# ---------------------------------------------------------------------------
-
+# SECTION_NEWS AGENT
 NEWS_CLASSIFY_PROMPT = """
 You are a financial news classifier. For each numbered news item below, assign exactly ONE section label.
 
