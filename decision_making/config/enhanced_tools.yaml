@@ -9,7 +9,7 @@ tickers:
 
 
 # Workflow execution mode
-sequential_mode: true  # false for parallel, true for sequential execution
+sequential_mode: false  # false for parallel, true for sequential execution
 
 # Analysts to run, refer to graph.constants.py
 workflow_analysts:
@@ -22,5 +22,5 @@ workflow_analysts:
 # LLM model settings, refer to llm/inference.py: LLMConfig
 llm:
   provider: "OpenAI"
-  model: "gpt-4o-mini" # DeepSeek-V3
+  model: "gpt-4.1-nano" # DeepSeek-V3
   temperature: 0
