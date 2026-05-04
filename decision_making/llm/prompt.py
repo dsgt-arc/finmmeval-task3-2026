@@ -164,7 +164,10 @@ Analyst signals:
 
 Signal balance: {signal_balance} (positive = net bullish, negative = net bearish)
 
-Recent decision history:
+Recent decision performance:
+{hit_rate_summary}
+
+Recent decision history (with outcomes):
 {decision_memory}
 
 Current price: {current_price}
@@ -173,6 +176,7 @@ Decision rules:
 - When the signal balance is clearly positive (≥ +1), prefer Buy.
 - When the signal balance is clearly negative (≤ -1), prefer Sell.
 - Reserve Hold only when signals are genuinely split (balance near 0 with conflicting rationales).
+- If your recent hit-rate is below 40% with 3 or more decisions, be more conservative: prefer Hold unless signals are overwhelming (balance ≥ +3 or ≤ -3).
 
 You must provide your decision as a structured output with the following fields:
 - action: One of ["Buy", "Sell", "Hold"]
@@ -238,4 +242,3 @@ You must provide your analysis as a structured output with the following fields:
 - signal: One of ["Bullish", "Bearish", "Neutral"]
 - justification: A brief explanation summarising the section signals and your reasoning
 """
-
