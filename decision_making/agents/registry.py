@@ -3,7 +3,7 @@ from dataclasses import dataclass
 from importlib import import_module
 from typing import ClassVar
 
-from agents.portfolio_manager import portfolio_agent, portfolio_agent_enriched_memory
+from agents.portfolio_manager import portfolio_agent, portfolio_agent_enriched_memory, portfolio_agent_risk_managed
 from graph.constants import AgentKey
 
 
@@ -102,6 +102,12 @@ class AgentRegistry:
             key=AgentKey.PORTFOLIO,
             agent_doc="Portfolio manager making final trading decisions based on the signals from the analysts.",
             agent_func=portfolio_agent,
+        )
+
+        cls.register_agent(
+            key=AgentKey.PORTFOLIO_RISK_MANAGED,
+            agent_doc="Risk-managed portfolio manager: risk control LLM call + NAV-based share sizing.",
+            agent_func=portfolio_agent_risk_managed,
         )
 
         cls.register_agent(

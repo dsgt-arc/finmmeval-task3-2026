@@ -19,12 +19,23 @@ class AgentWorkflow:
         self.trading_date = config["trading_date"]
         self.db = get_db()
 
-        # Create a portfolio stub per run — serves only as FK anchor for decision/signal rows
-        portfolio_id = self.db.create_portfolio_stub(config_id, config["trading_date"])
-        if not portfolio_id:
-            raise RuntimeError(f"Failed to create portfolio stub for config {self.exp_name}")
-        self.portfolio_id = portfolio_id
-        logger.info(f"Portfolio stub ID: {self.portfolio_id}")
+        self.portfolio_mode = config.get("portfolio_mode", "market_timing")
+
+        if self.portfolio_mode == "risk_managed":
+            portfolio = self.db.get_latest_portfolio(config_id)
+            if not portfolio:
+                portfolio = self.db.create_portfolio(config_id, config["cashflow"], config["trading_date"])
+                if not portfolio:
+                    raise RuntimeError(f"Failed to create portfolio for config {self.exp_name}")
+            new_portfolio = self.db.copy_portfolio(config_id, portfolio, config["trading_date"])
+            self.init_portfolio = Portfolio(**new_portfolio)
+            logger.info(f"New portfolio ID: {self.init_portfolio.id}")
+        else:
+            portfolio_id = self.db.create_portfolio_stub(config_id, config["trading_date"])
+            if not portfolio_id:
+                raise RuntimeError(f"Failed to create portfolio stub for config {self.exp_name}")
+            self.portfolio_id = portfolio_id
+            logger.info(f"Portfolio stub ID: {self.portfolio_id}")
 
         self.sequential_mode = config.get("sequential_mode", False)
         self.enriched_memory = config.get("enriched_memory", False)
@@ -46,7 +57,12 @@ class AgentWorkflow:
         """Build the workflow."""
         graph = StateGraph(FundState)
 
-        portfolio_key = AgentKey.PORTFOLIO_ENRICHED_MEMORY if self.enriched_memory else AgentKey.PORTFOLIO
+        if self.portfolio_mode == "risk_managed":
+            portfolio_key = AgentKey.PORTFOLIO_RISK_MANAGED
+        elif self.enriched_memory:
+            portfolio_key = AgentKey.PORTFOLIO_ENRICHED_MEMORY
+        else:
+            portfolio_key = AgentKey.PORTFOLIO
         portfolio_func = AgentRegistry.get_agent_func_by_key(portfolio_key)
         graph.add_node(portfolio_key, portfolio_func)
 
@@ -94,18 +110,34 @@ class AgentWorkflow:
             self.sequential_mode,
         )
 
+        portfolio = self.init_portfolio if self.portfolio_mode == "risk_managed" else None
+
         for ticker in self.tickers:
             logger.info("Workflow ticker start ticker=%s config_id=%s", ticker, config_id)
             self.load_analysts(ticker)
 
-            state = FundState(
-                ticker=ticker,
-                exp_name=self.exp_name,
-                trading_date=self.trading_date,
-                llm_config=self.llm_config,
-                portfolio_id=self.portfolio_id,
-                api_payload=self.api_payload,
-            )
+            if self.portfolio_mode == "risk_managed":
+                state = FundState(
+                    ticker=ticker,
+                    exp_name=self.exp_name,
+                    trading_date=self.trading_date,
+                    llm_config=self.llm_config,
+                    portfolio_id=portfolio.id,
+                    portfolio=portfolio,
+                    num_tickers=len(self.tickers),
+                    api_payload=self.api_payload,
+                )
+            else:
+                state = FundState(
+                    ticker=ticker,
+                    exp_name=self.exp_name,
+                    trading_date=self.trading_date,
+                    llm_config=self.llm_config,
+                    portfolio_id=self.portfolio_id,
+                    portfolio=None,
+                    num_tickers=None,
+                    api_payload=self.api_payload,
+                )
 
             workflow = self.build()
             logger.info(f"{ticker} workflow compiled successfully")
@@ -119,11 +151,21 @@ class AgentWorkflow:
             logger.info(
                 "Workflow ticker complete ticker=%s action=%s shares=%s price=%s",
                 ticker,
-                final_state["decision"].action,
-                final_state["decision"].shares,
-                final_state["decision"].price,
+                decision.action,
+                decision.shares,
+                decision.price,
             )
-            self.db.save_decision(self.portfolio_id, ticker, "market_timing", decision, self.trading_date)
+
+            if self.portfolio_mode == "risk_managed":
+                portfolio = self.update_portfolio_ticker(portfolio, ticker, decision)
+                logger.log_portfolio(f"{ticker} position update", portfolio)
+            else:
+                self.db.save_decision(self.portfolio_id, ticker, "market_timing", decision, self.trading_date)
+
+        if self.portfolio_mode == "risk_managed":
+            logger.log_portfolio("Final Portfolio", portfolio)
+            logger.info("Updating portfolio to Database")
+            self.db.update_portfolio(config_id, portfolio.model_dump(), self.trading_date)
 
         end_time = perf_counter()
         time_cost = end_time - start_time

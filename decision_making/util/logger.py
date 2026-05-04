@@ -1,9 +1,10 @@
 from datetime import datetime
 import logging
 import os
+import pathlib
 import sys
 
-from graph.schema import AnalystSignal, Decision
+from graph.schema import AnalystSignal, Decision, Portfolio
 
 
 class DeepFundLogger:
@@ -19,7 +20,7 @@ class DeepFundLogger:
         self.log_level = log_level
 
         # Create log directory if it doesn't exist
-        os.makedirs(self.log_dir, exist_ok=True)
+        pathlib.Path(self.log_dir).mkdir(exist_ok=True, parents=True)
 
         # Create logger
         self.logger = logging.getLogger("deep_fund")
@@ -88,6 +89,11 @@ class DeepFundLogger:
         msg = f"Agent: {agent_name} | Ticker: {ticker} | Signal: {s.signal} | Justification: {s.justification}"
         self.info(msg)
 
+    def log_portfolio(self, label: str, p: Portfolio):
+        """Log portfolio state (risk_managed mode)."""
+        positions_summary = {t: {"shares": pos.shares, "value": pos.value} for t, pos in p.positions.items()}
+        msg = f"{label} | ID: {p.id} | Cashflow: {p.cashflow:.2f} | Positions: {positions_summary}"
+        self.info(msg)
 
 
 # Create a global logger instance

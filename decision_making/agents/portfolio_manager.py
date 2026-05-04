@@ -1,9 +1,9 @@
 import datetime
 
-from graph.constants import AgentKey
-from graph.schema import Decision, FundState
+from graph.constants import Action, AgentKey
+from graph.schema import Decision, FundState, PositionRisk
 from llm.inference import agent_call
-from llm.prompt import MARKET_TIMING_PROMPT, MARKET_TIMING_PROMPT_W_MEMORY
+from llm.prompt import MARKET_TIMING_PROMPT, MARKET_TIMING_PROMPT_W_MEMORY, PORTFOLIO_PROMPT, RISK_CONTROL_PROMPT
 from util.db_helper import get_db
 from util.logger import logger
 
@@ -116,3 +116,77 @@ def portfolio_agent_enriched_memory(state: FundState):
 def portfolio_agent(state: FundState):
     """Portfolio manager without decision memory — signals only."""
     return _run_portfolio(state, enriched_memory=False)
+
+
+def calculate_ticker_shares(portfolio, current_price, ticker, optimal_position_ratio):
+    """Calculate current and tradable shares for a ticker based on NAV and optimal position ratio."""
+    current_shares = portfolio.positions[ticker].shares if ticker in portfolio.positions else 0
+    current_value = current_shares * current_price
+    total_portfolio_value = portfolio.cashflow + sum(portfolio.positions[t].value for t in portfolio.positions)
+    position_limit = total_portfolio_value * optimal_position_ratio
+    position_value_gap = position_limit - current_value
+    if position_value_gap > 0:
+        tradable_shares = min(position_value_gap, portfolio.cashflow) // current_price
+    else:
+        tradable_shares = max(position_value_gap // current_price, -current_shares)
+    logger.info(
+        f"Ticker {ticker}: current_shares={current_shares}, current_price={current_price}, "
+        f"position_limit=${position_limit:.2f}, position_value_gap=${position_value_gap:.2f}, "
+        f"tradable_shares={tradable_shares}"
+    )
+    return current_shares, tradable_shares
+
+
+def portfolio_agent_risk_managed(state: FundState):
+    """Risk-managed portfolio agent: risk control LLM call → NAV-based share sizing → decision LLM call."""
+    agent_name = AgentKey.PORTFOLIO_RISK_MANAGED
+    portfolio = state["portfolio"]
+    ticker = state["ticker"]
+    exp_name = state["exp_name"]
+    trading_date = state["trading_date"]
+    analyst_signals = state["analyst_signals"]
+    llm_config = state["llm_config"]
+    num_tickers = state["num_tickers"]
+
+    db = get_db()
+
+    try:
+        historic_date = trading_date - datetime.timedelta(days=1)
+        current_price = load_specific_data(symbol=ticker, date=historic_date, type="current_price")
+    except Exception as e:
+        logger.error(f"Failed to fetch price data for {ticker}: {e}")
+        raise RuntimeError("Failed to make decision") from e
+
+    max_position_ratio = 1
+    if num_tickers > 1:
+        max_position_ratio = round(2 / num_tickers * 20) / 20
+
+    risk_prompt = RISK_CONTROL_PROMPT.format(
+        ticker_signals=analyst_signals,
+        portfolio=portfolio.model_dump_json(),
+        max_position_ratio=max_position_ratio,
+    )
+    position_risk = agent_call(prompt=risk_prompt, llm_config=llm_config, pydantic_model=PositionRisk)
+    logger.log_agent_status(agent_name, ticker, "Risk control")
+
+    position_risk.optimal_position_ratio = max(0, min(position_risk.optimal_position_ratio, max_position_ratio))
+
+    decision_memory = db.get_decision_memory(exp_name, ticker, thresholds["decision_memory_limit"])
+    current_shares, tradable_shares = calculate_ticker_shares(
+        portfolio, current_price, ticker, position_risk.optimal_position_ratio
+    )
+
+    prompt = PORTFOLIO_PROMPT.format(
+        decision_memory=decision_memory,
+        current_price=current_price,
+        current_shares=current_shares,
+        tradable_shares=tradable_shares,
+    )
+    ticker_decision = agent_call(prompt=prompt, llm_config=llm_config, pydantic_model=Decision)
+    ticker_decision.price = current_price
+    if ticker_decision.shares < 0 and ticker_decision.action == Action.SELL:
+        ticker_decision.shares = -ticker_decision.shares
+
+    logger.log_agent_status(agent_name, ticker, "Decision made")
+    logger.log_decision(ticker, ticker_decision)
+    return {"decision": ticker_decision}

@@ -59,6 +59,18 @@ class Portfolio(BaseModel):
     positions: dict[str, Position] = Field(description="Positions for each ticker.")
 
 
+class PositionRisk(BaseModel):
+    """Risk assessment for a single ticker (risk_managed mode only)."""
+
+    optimal_position_ratio: float = Field(
+        description="The optimal ratio of the position value to the total portfolio value", default=0.0
+    )
+    justification: str = Field(
+        description="Detailed risk assessment rationale explaining the recommendations",
+        default="No assessment provided due to insufficient data",
+    )
+
+
 class FundState(TypedDict):
     """Fund state when running the workflow."""
 
@@ -69,6 +81,10 @@ class FundState(TypedDict):
     llm_config: dict[str, Any] = Field(description="LLM configuration.")
     portfolio_id: str = Field(description="Portfolio stub id (FK anchor for DB logging).")
     api_payload: dict | None  # raw competition API payload (or None during backtests); analysts pull what they need
+
+    # risk_managed mode only
+    portfolio: Portfolio | None
+    num_tickers: int | None
 
     analyst_signals: Annotated[list[AnalystSignal], operator.add]  # updated by workflow: ticker -> signal of all analysts
 
