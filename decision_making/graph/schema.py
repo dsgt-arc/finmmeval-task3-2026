@@ -5,7 +5,7 @@ from typing import Annotated, Any
 from pydantic import BaseModel, Field
 from typing_extensions import TypedDict
 
-from decision_making.graph.constants import Action, Signal
+from graph.constants import Action, Signal
 
 
 class AnalystSignal(BaseModel):

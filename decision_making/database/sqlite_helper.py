@@ -3,10 +3,10 @@ import json
 import sqlite3
 import uuid
 
-from decision_making.database.interface import BaseDB
-from decision_making.database.sqlite_setup import DB_PATH
-from decision_making.graph.schema import AnalystSignal, Decision
-from decision_making.util.logger import logger
+from database.interface import BaseDB
+from database.sqlite_setup import DB_PATH
+from graph.schema import AnalystSignal, Decision
+from util.logger import logger
 
 
 class SQLiteDB(BaseDB):
