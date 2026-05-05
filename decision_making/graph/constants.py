@@ -14,7 +14,6 @@ class AgentKey:
     PORTFOLIO_ENRICHED_MEMORY = "portfolio_manager_enriched_memory"
     PORTFOLIO = "portfolio_manager"
     PORTFOLIO_RISK_MANAGED = "portfolio_manager_risk_managed"
-    PLANNER = "analyst_planner"
 
 
 class Signal(StrEnum):

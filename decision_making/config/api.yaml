@@ -1,4 +1,4 @@
-# Deep Fund API Configuration
+# DS@GT StockTron Configuration
 #
 # This is the default workflow config used by the competition-facing API.
 # The deployed API loads this file unless DECISION_BRIDGE_CONFIG is set in the
@@ -12,6 +12,8 @@ cashflow: 100000
 tickers:
   - TSLA
   - BTC
+portfolio_mode: market_timing # risk_managed (paper portfolio), market_timing (pure signal implementation)
+enriched_memory: false # whether to consider past hit-rate in market_timing or not
 
 # Workflow execution mode
 sequential_mode: false  # false for parallel, true for sequential execution
@@ -22,12 +24,12 @@ workflow_analysts:
   - technical
   - company_news
   - company_news_enhanced
-  - ml_model_agent_online
+  - ml_model_online
   - section_news
 
 
 # LLM model settings, refer to llm/inference.py: LLMConfig
 llm:
   provider: "OpenAI"
-  model: "gpt-5.5" # DeepSeek-V3
+  model: "gpt-5.5"
   temperature: 0

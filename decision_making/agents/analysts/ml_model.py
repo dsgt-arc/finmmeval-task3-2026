@@ -22,6 +22,7 @@ from decision_making.ml_model.feature_engineering_inference import (
 def _prev_trading_day(date: datetime.date) -> datetime.datetime:
     """Return the most recent NYSE trading day strictly before date."""
     import pandas_market_calendars as mcal
+
     nyse = mcal.get_calendar("NYSE")
     # Look back up to 10 calendar days to find the previous session
     start = (date - datetime.timedelta(days=10)).strftime("%Y-%m-%d")
@@ -66,7 +67,7 @@ def _load_prices_for_inference(ticker: str, date, adj_close_wide) -> pl.DataFram
     return combined
 
 
-def ml_model_agent_online(state: FundState):
+def ml_model_online(state: FundState):
     """ML analyst with cross-sectional online learning.
 
     For each trading day:
@@ -111,7 +112,6 @@ def ml_model_agent_online(state: FundState):
         logger.info(f"Model already trained through {trading_date}, skipping online learning")
     elif price_data is not None:
         try:
-
             # Check that the previous day falls within the SP500 data range
             available_dates = price_data.index[price_data.index <= prev_date]
             if len(available_dates) >= 2:
