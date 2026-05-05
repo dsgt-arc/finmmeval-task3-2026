@@ -14,7 +14,7 @@ def db_initialize(use_local_db: bool = False):
         _db = SQLiteDB()
         logger.info("SQLite database initialized")
     else:
-        pass  # TODO: initialize the connection to other  database here
+        pass
     db = _db
 
 

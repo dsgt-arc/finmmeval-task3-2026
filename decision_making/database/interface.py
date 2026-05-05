@@ -42,3 +42,19 @@ class BaseDB(ABC):
     @abstractmethod
     def get_signal_history(self, exp_name: str, ticker: str, analyst: str, lookback_days: int = 10) -> list:
         pass
+
+    @abstractmethod
+    def get_latest_portfolio(self, config_id: str) -> dict | None:
+        pass
+
+    @abstractmethod
+    def create_portfolio(self, config_id: str, cashflow: float, trading_date: datetime) -> dict | None:
+        pass
+
+    @abstractmethod
+    def copy_portfolio(self, config_id: str, portfolio: dict, trading_date: datetime) -> dict | None:
+        pass
+
+    @abstractmethod
+    def update_portfolio(self, config_id: str, portfolio: dict, trading_date: datetime) -> bool:
+        pass

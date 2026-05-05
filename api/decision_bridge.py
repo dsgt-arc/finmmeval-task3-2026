@@ -1,4 +1,4 @@
-"""Orchestration bridge between the API and the DeepFund workflow.
+"""Orchestration bridge between the API and the DS@GT StockTron workflow.
 
 Separation of concerns:
 - Receives the raw payload from the FastAPI layer.
@@ -59,7 +59,7 @@ def _tail(text: str, limit: int = 1500) -> str:
 
 
 def recommend_action(payload: Dict[str, Any], request_id: str | None = None) -> str:
-    """Run the existing DeepFund workflow and return the latest action string."""
+    """Run the DS@GT StockTron workflow and return the latest action string."""
     request_id = request_id or "unknown"
 
     # The API already validated the request shape. Here we only enforce the

@@ -1,5 +1,5 @@
 # DS@GT StockTron Configuration
-exp_name: "tesla_btc_baseline"
+exp_name: "abelatin_section_news"
 
 # Trading settings
 cashflow: 100000
@@ -9,14 +9,14 @@ tickers:
 portfolio_mode: market_timing # risk_managed (paper portfolio), market_timing (pure signal implementation)
 enriched_memory: false # whether to consider past hit-rate in market_timing or not
 
-
 # Workflow execution mode
 sequential_mode: false  # false for parallel, true for sequential execution
 
 # Analysts to run, refer to graph.constants.py
 workflow_analysts:
   - technical
-  - company_news
+  - section_news
+
 
 # LLM model settings, refer to llm/inference.py: LLMConfig
 llm:

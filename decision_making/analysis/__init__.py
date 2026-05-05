@@ -1,5 +1,5 @@
 """
-DeepFund trading performance analysis utilities.
+DS@GT StockTron trading performance analysis utilities.
 
 This package provides tools for analyzing market timing results from the SQLite database,
 including timing performance, hit rate metrics, and benchmark comparisons.

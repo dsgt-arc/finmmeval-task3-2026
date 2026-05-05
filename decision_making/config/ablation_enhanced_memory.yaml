@@ -1,26 +1,22 @@
-# Deep Fund Configuration
-exp_name: "abelatin_section_news"
+# DS@GT StockTron Configuration
+exp_name: "ablation_enhanced_memory"
 
 # Trading settings
-cashflow: 100000
 tickers:
   - TSLA
   - BTC
-
+enriched_memory: true  # false for standard memory, true for enriched memory with past hit rate
 
 # Workflow execution mode
 sequential_mode: false  # false for parallel, true for sequential execution
 
 # Analysts to run, refer to graph.constants.py
 workflow_analysts:
-  #- dummy
   - technical
-  - section_news
-  #- company_news_enhanced
-  #- ml_model_agent_online
+  - company_news
 
 # LLM model settings, refer to llm/inference.py: LLMConfig
 llm:
   provider: "OpenAI"
-  model: "gpt-4.1-nano" # DeepSeek-V3
+  model: "gpt-4.1-nano"
   temperature: 0

@@ -4,17 +4,16 @@ from enum import StrEnum
 class AgentKey:
     # analyst keys
     TECHNICAL = "technical"
-    FUNDAMENTAL = "fundamental"
-    INSIDER = "insider"
+
     COMPANY_NEWS = "company_news"
     SECTION_NEWS = "section_news"
-    MACROECONOMIC = "macroeconomic"
-    POLICY = "policy"
     COMPANY_NEWS_ENHANCED = "company_news_enhanced"
     DUMMY = "dummy"
-    ML_MODEL_ONLINE = "ml_model_agent_online"
+    ML_MODEL_ONLINE = "ml_model_online"
     # workflow keys
+    PORTFOLIO_ENRICHED_MEMORY = "portfolio_manager_enriched_memory"
     PORTFOLIO = "portfolio_manager"
+    PORTFOLIO_RISK_MANAGED = "portfolio_manager_risk_managed"
     PLANNER = "analyst_planner"
 
 

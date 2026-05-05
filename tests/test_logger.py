@@ -1,4 +1,4 @@
-"""Regression tests for the shared DeepFund logger."""
+"""Regression tests for the DS@GT StockTron logger."""
 
 from __future__ import annotations
 
@@ -12,13 +12,13 @@ for path in (str(DECISION_MAKING_DIR), str(ROOT)):
     if path not in sys.path:
         sys.path.insert(0, path)
 
-from util.logger import logger as deepfund_logger  # noqa: E402
+from util.logger import logger as stocktron_logger  # noqa: E402
 
 
 def test_console_logs_go_to_stderr():
     stream_handlers = [
         handler
-        for handler in deepfund_logger.logger.handlers
+        for handler in stocktron_logger.logger.handlers
         if type(handler) is logging.StreamHandler
     ]
 

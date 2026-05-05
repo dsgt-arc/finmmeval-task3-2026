@@ -6,17 +6,7 @@ You must provide your analysis as a structured output with the following fields:
 Your response should be well-reasoned and consider all aspects of the analysis.
 """
 
-FUNDAMENTAL_PROMPT = (
-    """
-You are a financial analyst evaluating ticker based on fundamental analysis.
-
-The following fundamentals have been generated from our analysis:
-{fundamentals}
-
-"""
-    + ANALYST_OUTPUT_FORMAT
-)
-
+# TECHNICAL AGENT
 TECHNICAL_PROMPT = (
     """
 You are a technical analyst evaluating ticker using multiple technical analysis strategies.
@@ -49,6 +39,7 @@ Here are recent {num_trades} insider trades:
     + ANALYST_OUTPUT_FORMAT
 )
 
+# COMPANY NEWS AGENT
 COMPANY_NEWS_PROMPT = (
     """
 You are a company news analyst evaluating ticker based on recent news. Title, publisher, and publish time are provided.
@@ -60,6 +51,7 @@ Here are recent news:
     + ANALYST_OUTPUT_FORMAT
 )
 
+# COMPANY NEWS ENHANCED AGENT
 RELEVANCE_CHECK_PROMPT = """
 You are screening news content to determine if it's relevant for predicting next-day asset price movements for {ticker}.
 
@@ -112,33 +104,7 @@ Provide structured output:
 - article_preview: First 50 characters of the article text
 """
 
-
-MACROECONOMIC_PROMPT = (
-    """
-You are senior macroeconomic analyst, conduct a comprehensive evaluation of current macroeconomic conditions.
-
-Here are the macroeconomic indicators of past periods:
-{economic_indicators}
-
-"""
-    + ANALYST_OUTPUT_FORMAT
-)
-
-POLICY_PROMPT = (
-    """
-You are a policy analyst. Evaluate the given news related to fiscal and monetary policy, and classify their short-term (6-month) economic impact.
-
-Here are the fiscal policy:
-{fiscal_policy}
-
-Here are the monetary policy:
-{monetary_policy}
-
-"""
-    + ANALYST_OUTPUT_FORMAT
-)
-
-
+# ML MODEL AGENT
 ML_MODEL_PROMPT = """
 You are a quantitative analyst evaluating a stock ticker using a machine learning model.
 
@@ -153,6 +119,37 @@ Provide structured output with the following fields:
 - signal: One of ["Bullish", "Bearish", "Neutral"]
 - justification: A brief explanation of your analysis
 - signal_strength: Float from -1.0 (strong bearish) to +1.0 (strong bullish) reflecting your conviction based on the predicted probability
+"""
+
+# PORTFOLIO MANAGER AGENT
+MARKET_TIMING_PROMPT_W_MEMORY = """
+You are a market timing agent. Based on analyst signals and recent decision history,
+decide whether to be LONG (Buy), SHORT (Sell), or NEUTRAL (Hold) on {ticker}.
+
+Analyst signals:
+{analyst_signals}
+
+Signal balance: {signal_balance} (positive = net bullish, negative = net bearish)
+
+Recent decision performance:
+{hit_rate_summary}
+
+Recent decision history (with outcomes):
+{decision_memory}
+
+Current price: {current_price}
+
+Decision rules:
+- When the signal balance is clearly positive (≥ +1), prefer Buy.
+- When the signal balance is clearly negative (≤ -1), prefer Sell.
+- Reserve Hold only when signals are genuinely split (balance near 0 with conflicting rationales).
+- If your recent hit-rate is below 40% with 3 or more decisions, be more conservative: prefer Hold unless signals are overwhelming (balance ≥ +3 or ≤ -3).
+
+You must provide your decision as a structured output with the following fields:
+- action: One of ["Buy", "Sell", "Hold"]
+- shares: Set to 1 for Buy or Sell, 0 for Hold
+- price: The current price of the ticker
+- justification: A brief explanation of your decision
 """
 
 MARKET_TIMING_PROMPT = """
@@ -181,24 +178,51 @@ You must provide your decision as a structured output with the following fields:
 - justification: A brief explanation of your decision
 """
 
-PLANNER_PROMPT = """
-You are a planner agent that decides which analysts to perform based on the your knowledge of the ticker and features of analysts.
+PORTFOLIO_PROMPT = """
+You are a portfolio manager making final trading decisions based on decision memory, and the provided optimal position ratio.
 
-Here is the ticker:
-{ticker}
+Here is the decision memory:
+{decision_memory}
 
-Here are the available analysts:
-{analysts}
+Current Price: {current_price}
+Holding Shares: {current_shares}
+Tradable Shares: {tradable_shares}
+
+If the value of tradable shares is positive, you can buy more shares.
+If the value of tradable shares is negative, you can sell some shares.
+If the value of tradable shares is close to 0, you can hold.
 
 You must provide your decision as a structured output with the following fields:
-- analysts: selected analyst_name list
-- justification: brief explanation of your selection
+- action: One of ["Buy", "Sell", "Hold"]
+- shares: Number of shares to buy or sell, set 0 for hold
+- price: The current price of the ticker
+- justification: A brief explanation of your decision
+
+Your response should be well-reasoned and consider all aspects of the analysis.
 """
 
-# ---------------------------------------------------------------------------
-# Section news prompts
-# ---------------------------------------------------------------------------
+RISK_CONTROL_PROMPT = """
+You are a professional risk control analyst.
+Please evaluate the risk of the ticker and set the optimal position ratio based on analyst signals and portfolio state.
 
+Here are the analyst signals:
+{ticker_signals}
+
+Here is the portfolio state:
+{portfolio}
+
+The position ratio range: [0, {max_position_ratio}], the minimum step is 0.05.
+If you observe more bullish signals, you can set a larger position ratio.
+If you observe more bearish signals, you can set a smaller position ratio.
+
+You must provide your control recommendation as a structured output with the following fields:
+- optimal_position_ratio: The optimal ratio of the position value to the total portfolio value
+- justification: A brief explanation of your recommendation
+
+Your response should be well-reasoned and consider all aspects of the analysis.
+"""
+
+# SECTION_NEWS AGENT
 NEWS_CLASSIFY_PROMPT = """
 You are a financial news classifier. For each numbered news item below, assign exactly ONE section label.
 
@@ -238,4 +262,3 @@ You must provide your analysis as a structured output with the following fields:
 - signal: One of ["Bullish", "Bearish", "Neutral"]
 - justification: A brief explanation summarising the section signals and your reasoning
 """
-

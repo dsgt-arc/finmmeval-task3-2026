@@ -1,6 +1,6 @@
 # finmmeval-task3-2026
 
-DeepFund-style trading workflow plus a competition-facing HTTP API for Task 3.
+DS@GT StockTron: a multi-agent trading workflow plus a competition-facing HTTP API for Task 3 (CLEF 2026 FinMMEval).
 
 This repository has two main pieces:
 - `decision_making/` contains the existing trading workflow, data loading, models, and SQLite-backed state.

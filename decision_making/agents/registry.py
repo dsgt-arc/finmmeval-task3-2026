@@ -1,9 +1,9 @@
 from collections.abc import Callable
-from importlib import import_module
 from dataclasses import dataclass
+from importlib import import_module
 from typing import ClassVar
 
-from agents.portfolio_manager import portfolio_agent
+from agents.portfolio_manager import portfolio_agent, portfolio_agent_enriched_memory, portfolio_agent_risk_managed
 from graph.constants import AgentKey
 
 
@@ -25,12 +25,8 @@ class AgentRegistry:
     # Analyst KEYs
     ANALYST_KEYS: ClassVar[list[str]] = [
         AgentKey.TECHNICAL,
-        AgentKey.FUNDAMENTAL,
-        AgentKey.INSIDER,
         AgentKey.COMPANY_NEWS,
         AgentKey.SECTION_NEWS,
-        AgentKey.MACROECONOMIC,
-        AgentKey.POLICY,
         AgentKey.DUMMY,
         AgentKey.COMPANY_NEWS_ENHANCED,
         AgentKey.ML_MODEL_ONLINE,
@@ -97,49 +93,61 @@ class AgentRegistry:
         """Run the registry."""
 
         cls.register_agent(
+            key=AgentKey.PORTFOLIO_ENRICHED_MEMORY,
+            agent_doc="Portfolio manager making final trading decisions based on the signals from the analysts and past hit rate.",
+            agent_func=portfolio_agent_enriched_memory,
+        )
+
+        cls.register_agent(
             key=AgentKey.PORTFOLIO,
             agent_doc="Portfolio manager making final trading decisions based on the signals from the analysts.",
             agent_func=portfolio_agent,
         )
 
         cls.register_agent(
+            key=AgentKey.PORTFOLIO_RISK_MANAGED,
+            agent_doc="Risk-managed portfolio manager: risk control LLM call + NAV-based share sizing.",
+            agent_func=portfolio_agent_risk_managed,
+        )
+
+        cls.register_agent(
             key=AgentKey.COMPANY_NEWS,
             agent_doc="Company news specialist analyzing company news and media coverage.",
-            module_path="decision_making.agents.analysts.company_news",
+            module_path="agents.analysts.company_news",
             attr_name="company_news_agent",
         )
 
         cls.register_agent(
             key=AgentKey.TECHNICAL,
             agent_doc="Technical analysis specialist using multiple technical analysis strategies.",
-            module_path="decision_making.agents.analysts.technical",
+            module_path="agents.analysts.technical",
             attr_name="technical_agent",
         )
 
         cls.register_agent(
             key=AgentKey.SECTION_NEWS,
             agent_doc="Section-aware news analyst that classifies news into categories and scores each independently.",
-            module_path="decision_making.agents.analysts.section_news",
+            module_path="agents.analysts.section_news",
             attr_name="section_news_agent",
         )
 
         cls.register_agent(
             key=AgentKey.DUMMY,
             agent_doc="Dummy analyst for debugging - returns neutral signal with no analysis.",
-            module_path="decision_making.agents.analysts.dummy",
+            module_path="agents.analysts.dummy",
             attr_name="dummy_agent",
         )
 
         cls.register_agent(
             key=AgentKey.ML_MODEL_ONLINE,
             agent_doc="ML analyst with cross-sectional online learning: updates model daily from full SP500 cross-section before predicting the competition ticker.",
-            module_path="decision_making.agents.analysts.ml_model",
-            attr_name="ml_model_agent_online",
+            module_path="agents.analysts.ml_model",
+            attr_name="ml_model_online",
         )
 
         cls.register_agent(
             key=AgentKey.COMPANY_NEWS_ENHANCED,
             agent_doc="Enhanced company news analyst with per-article analysis and trend tracking.",
-            module_path="decision_making.agents.analysts.company_news_enhanced",
+            module_path="agents.analysts.company_news_enhanced",
             attr_name="company_news_enhanced_agent",
         )
