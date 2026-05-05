@@ -19,7 +19,7 @@ from graph.constants import NewsSection
 from util.logger import logger
 
 if TYPE_CHECKING:
-    from news_pipeline import NewsItem
+    from news.pipeline import NewsItem
 
 # ---------------------------------------------------------------------------
 # Keyword rules — order matters: first match wins.

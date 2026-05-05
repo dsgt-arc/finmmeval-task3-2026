@@ -406,3 +406,84 @@ def calculate_annualized_return(total_return_pct: float, num_days: int) -> float
     if num_days <= 0:
         return 0.0
     return ((1 + total_return_pct / 100) ** (365 / num_days) - 1) * 100
+
+
+# ---------------------------------------------------------------------------
+# Portfolio position helpers
+# ---------------------------------------------------------------------------
+
+def extract_ticker_positions(portfolio_df: pl.DataFrame, ticker: str) -> pl.DataFrame:
+    """
+    Extract per-ticker position value from the positions JSON column.
+
+    The positions column stores JSON of the form:
+        {"TSLA": {"shares": N, "value": V}, "BTC": {"shares": N, "value": V}}
+
+    Args:
+        portfolio_df: DataFrame returned by get_portfolio_timeseries / get_all_portfolio_records
+        ticker: Ticker symbol to extract
+
+    Returns:
+        DataFrame with columns: trading_date, value
+    """
+    import json as _json
+
+    def _get_value(positions_raw) -> float:
+        try:
+            pos = _json.loads(positions_raw) if isinstance(positions_raw, str) else positions_raw
+            return float(pos.get(ticker, {}).get("value", 0.0))
+        except Exception:
+            return 0.0
+
+    values = [_get_value(p) for p in portfolio_df["positions"].to_list()]
+    return pl.DataFrame({"trading_date": portfolio_df["trading_date"], "value": values})
+
+
+def calculate_realized_pnl(
+    decisions_df: pl.DataFrame, initial_capital: float = 100000.0
+) -> pl.DataFrame:
+    """
+    Compute normalized P&L assuming exactly 1 share per trade.
+
+    Cash-flow convention (per decision):
+      - BUY  → cashflow = -price  (spend 1 share worth)
+      - SELL → cashflow = +price  (receive 1 share worth)
+      - HOLD → cashflow = 0
+
+    cumulative_return_pct is the running cashflow expressed as a percentage
+    of initial_capital, giving a position-size-neutral view of timing quality.
+
+    Args:
+        decisions_df: DataFrame from get_all_decisions (all tickers combined)
+        initial_capital: Denominator for return normalisation
+
+    Returns:
+        DataFrame with columns:
+          trading_date, ticker, action, price, cashflow,
+          cumulative_cashflow, cumulative_return_pct
+    """
+    df = decisions_df
+    if df["trading_date"].dtype in (pl.Utf8, pl.String):
+        df = df.with_columns(pl.col("trading_date").str.to_datetime())
+
+    df = df.sort("trading_date")
+
+    df = df.with_columns(
+        pl.when(pl.col("action") == "Buy")
+        .then(-pl.col("price"))
+        .when(pl.col("action") == "Sell")
+        .then(pl.col("price"))
+        .otherwise(0.0)
+        .alias("cashflow")
+    )
+
+    cumsum = df["cashflow"].cum_sum()
+    df = df.with_columns([
+        cumsum.alias("cumulative_cashflow"),
+        (cumsum / initial_capital * 100).alias("cumulative_return_pct"),
+    ])
+
+    return df.select([
+        "trading_date", "ticker", "action", "price",
+        "cashflow", "cumulative_cashflow", "cumulative_return_pct",
+    ])

@@ -13,7 +13,6 @@ Usage:
     uv run python scripts/train_return_model_simple.py
 """
 
-import json
 from datetime import datetime
 from pathlib import Path
 
@@ -27,7 +26,7 @@ from decision_making.ml_model.config import TRAIN_CONFIG as CONFIG
 from decision_making.ml_model.feature_engineering import build_feature_matrix
 from decision_making.ml_model.ml_model_manager import MODEL_FILENAME, REFERENCE_FILENAME, build_reference_data
 from decision_making.ml_model.model_persistence import save_model
-from decision_making.models import RandomForestReturnModel
+from decision_making.ml_model.models import RandomForestReturnModel
 
 matplotlib.use("Agg")
 
@@ -120,7 +119,7 @@ def main():
     importance_df.to_csv(output_dir / "feature_importance.csv", index=False)
 
     # Plots
-    fig, ax = plt.subplots(figsize=(10, 8))
+    _, ax = plt.subplots(figsize=(10, 8))
     top_n = min(20, len(importance_df))
     top_features = importance_df.head(top_n)
     ax.barh(range(top_n), top_features["importance"])
@@ -134,7 +133,7 @@ def main():
     plt.savefig(output_dir / "feature_importance.png", dpi=150, bbox_inches="tight")
     plt.close()
 
-    fig, ax = plt.subplots(figsize=(8, 5))
+    _, ax = plt.subplots(figsize=(8, 5))
     metric_series = pd.Series(metrics)
     ax.bar(metric_series.index, metric_series.values)
     ax.set_ylim(0, 1)

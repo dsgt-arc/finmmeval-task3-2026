@@ -31,6 +31,16 @@
             "justMyCode": true,
             "args": ["--config", "config/cost_check.yaml", "--trading-date", "2024-08-03", "--local-db"],
             "cwd": "${fileDirname}"
+        },
+        {
+            "name": "Python Debugger: Check API YAML",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${file}",
+            "console": "integratedTerminal",
+            "justMyCode": true,
+            "args": ["--config", "config/api.yaml", "--trading-date", "2024-08-03", "--local-db"],
+            "cwd": "${fileDirname}"
         }
     ]
 }

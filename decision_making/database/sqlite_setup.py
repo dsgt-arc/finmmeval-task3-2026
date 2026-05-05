@@ -2,13 +2,22 @@ import os
 from pathlib import Path
 import sqlite3
 
-from dotenv import load_dotenv
+from dotenv import find_dotenv, load_dotenv
 
-# Load environment variables from .env file
-load_dotenv()
+# Locate the .env file so relative DB_PATH values are resolved against it,
+# not against the process CWD (which differs between VS Code and run_date_range.sh).
+_dotenv_path = find_dotenv(usecwd=True) or find_dotenv()
+load_dotenv(_dotenv_path)
 
-# Ensure database directory exists
-DB_PATH = os.getenv("DB_PATH") or str(Path(__file__).resolve().parent / "dsgt_stocktron.sqlite3")
+_raw = os.getenv("DB_PATH")
+if _raw:
+    _p = Path(_raw)
+    if not _p.is_absolute() and _dotenv_path:
+        _p = (Path(_dotenv_path).parent / _p).resolve()
+    DB_PATH = str(_p)
+else:
+    DB_PATH = str(Path(__file__).resolve().parent / "dsgt_stocktron.db")
+
 Path(DB_PATH).parent.mkdir(parents=True, exist_ok=True)
 
 

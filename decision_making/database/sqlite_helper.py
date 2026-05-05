@@ -463,5 +463,3 @@ class SQLiteDB(BaseDB):
         finally:
             if conn:
                 conn.close()
-
-

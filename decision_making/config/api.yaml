@@ -12,6 +12,8 @@ cashflow: 100000
 tickers:
   - TSLA
   - BTC
+portfolio_mode: market_timing # risk_managed (paper portfolio), market_timing (pure signal implementation)
+enriched_memory: false  # false for standard memory, true for enriched memory with past hit rate
 
 # Workflow execution mode
 sequential_mode: false  # false for parallel, true for sequential execution

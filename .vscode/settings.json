@@ -1,7 +1,5 @@
 {
   // Python environment settings
-  "python-envs.defaultEnvManager": "ms-python.python:venv",
-  "python-envs.defaultPackageManager": "ms-python.python:pip",
 
   // Ruff as the default formatter and linter
   "[python]": {
