@@ -9,8 +9,8 @@ Separation of concerns:
 
 from __future__ import annotations
 
-from datetime import datetime
 from collections import Counter
+from datetime import datetime
 import json
 import os
 from pathlib import Path
