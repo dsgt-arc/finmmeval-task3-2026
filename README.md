@@ -1,7 +1,6 @@
 # finmmeval-task3-2026 - DS@GT StockTron
 
-DS@GT StockTron: a
--agent trading workflow plus a competition-facing HTTP API for Task 3 (CLEF 2026 FinMMEval). The DS@GT StockTron has been build by initially forking [DeepFund](https://github.com/HKUSTDial/DeepFund) and modiyfing and enhancing its workflows and agents.
+DS@GT StockTron: a mulit-agent trading workflow plus a competition-facing HTTP API for Task 3 (CLEF 2026 FinMMEval). The DS@GT StockTron has been build by initially forking [DeepFund](https://github.com/HKUSTDial/DeepFund) and modiyfing and enhancing its workflows and agents.
 
 This repository has following main pieces:
 - `decision_making/` contains the existing trading workflow, data loading, models, and SQLite-backed state.
@@ -10,7 +9,7 @@ This repository has following main pieces:
 - `docs/` contains information on the api deployment, ml-model-tool included in the agent workflow
 - `tests/` unit-tests for api and other utils
 
-## Quickstart
+# Quickstart
 
 Install the project with `uv`:
 
