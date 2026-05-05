@@ -159,6 +159,7 @@ class AgentWorkflow:
             if self.portfolio_mode == "risk_managed":
                 portfolio = self.update_portfolio_ticker(portfolio, ticker, decision)
                 logger.log_portfolio(f"{ticker} position update", portfolio)
+                self.db.save_decision(portfolio.id, ticker, "risk_managed", decision, self.trading_date)
             else:
                 self.db.save_decision(self.portfolio_id, ticker, "market_timing", decision, self.trading_date)
 
