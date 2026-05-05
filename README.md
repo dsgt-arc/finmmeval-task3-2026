@@ -9,6 +9,91 @@ This repository has following main pieces:
 - `docs/` contains information on the api deployment, ml-model-tool included in the agent workflow
 - `tests/` unit-tests for api and other utils
 
+## Repository Structure
+
+```
+finmmeval-task3-2026/
+├── api/                                    # FastAPI competition endpoint
+│   ├── decision_bridge.py                  # Subprocess bridge into the workflow
+│   ├── decision_bridge_worker.py
+│   └── simple_trading_api.py               # Main API server
+├── decision_making/                        # Core trading workflow
+│   ├── agents/
+│   │   ├── analysts/                       # Individual analyst agents
+│   │   │   ├── company_news.py             # Baseline news agent
+│   │   │   ├── company_news_enhanced.py    # Enhanced sentiment agent
+│   │   │   ├── ml_model.py                 # RandomForest signal agent
+│   │   │   ├── section_news.py             # Section-level news agent
+│   │   │   └── technical.py               # Technical indicators agent
+│   │   ├── portfolio_manager.py            # Final BUY/HOLD/SELL decision
+│   │   └── registry.py
+│   ├── config/                             # YAML workflow configs (one per experiment)
+│   │   ├── api.yaml                        # Production default (all five agents)
+│   │   ├── tesla_btc_baseline.yaml         # Minimal two-agent baseline
+│   │   └── ablation_*.yaml                 # Ablation study configs
+│   ├── database/                           # SQLite-backed state
+│   │   ├── sqlite_setup.py
+│   │   ├── sqlite_helper.py
+│   │   └── interface.py
+│   ├── graph/                              # LangGraph workflow definition
+│   │   ├── workflow.py
+│   │   ├── schema.py
+│   │   └── constants.py
+│   ├── llm/                                # LLM inference & prompt helpers
+│   │   ├── inference.py
+│   │   ├── prompt.py
+│   │   └── provider.py
+│   ├── ml_model/                           # RandomForest training & inference
+│   │   ├── config.py                       # Hyperparameters & feature settings
+│   │   ├── feature_engineering.py
+│   │   ├── ml_model_manager.py
+│   │   ├── models.py
+│   │   ├── online_learning.py
+│   │   └── validation.py
+│   ├── news/                               # News classification pipeline
+│   │   ├── classifier.py
+│   │   └── pipeline.py
+│   ├── analysis/                           # Performance analysis utilities
+│   │   ├── performance.py
+│   │   └── queries.py
+│   ├── util/                               # Shared utilities (logging, config, db)
+│   ├── ama_data.py                         # Competition data loader
+│   ├── signals.py
+│   ├── sp500_data.py                       # S&P 500 data loader (yfinance)
+│   └── run_decision_making.py              # Workflow entry point
+├── docs/
+│   ├── deployment.md                       # Cloud Run deployment guide
+│   ├── ml_model.md                         # ML model documentation
+│   ├── overview.md
+│   └── test_API.md                         # API usage & request examples
+├── notebooks/
+│   ├── 20260426-mh-market-timing-performance.ipynb   # Signal-based evaluation
+│   ├── 20260427-mh-experiment-comparison.ipynb       # Multi-experiment comparison
+│   └── 20261111-mh-eda.ipynb                         # Exploratory data analysis
+├── scripts/
+│   ├── run_date_range.sh                   # Backtest runner
+│   ├── delete_config_history.sh            # Clear DB entries for a config
+│   ├── run_download_ama_data.py            # Download competition data
+│   ├── run_download_sp500_data.py          # Download S&P 500 training data
+│   ├── train_ml_model_simple.py            # Train RandomForest (simple split)
+│   ├── train_ml_model_tscv.py             # Train with time-series cross-validation
+│   ├── deploy_cloud_run.py                 # Cloud Run deploy helper
+│   └── smoke_api.sh                        # Live server smoke test
+├── tests/
+│   ├── test_api.py
+│   ├── test_api_integration.py
+│   └── test_llm_inference.py
+├── output/                                 # Trained model artifacts (git-ignored)
+├── data/                                   # Competition data (git-ignored)
+├── Dockerfile
+├── Makefile
+├── pyproject.toml                          # Dependency source of truth (uv)
+├── CLAUDE.md
+├── .env.example
+├── .pre-commit-config.yaml
+└── README.md
+```
+
 # Quickstart
 
 Install the project with `uv`:
