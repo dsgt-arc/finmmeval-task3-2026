@@ -2,7 +2,7 @@
 
 This repository exposes a competition-style HTTP endpoint in `api/simple_trading_api.py`.
 The endpoint is designed to receive the same JSON payload that the organizers send,
-call the existing DeepFund workflow, and return exactly one trading signal:
+call the existing DS@GT StockTron workflow, and return exactly one trading signal:
 
 ```json
 {"recommended_action": "BUY"}

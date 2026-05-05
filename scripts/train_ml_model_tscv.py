@@ -9,8 +9,8 @@ from decision_making.ml_model.config import TRAIN_CONFIG as CONFIG
 from decision_making.ml_model.feature_engineering import build_feature_matrix
 from decision_making.ml_model.ml_model_manager import MODEL_FILENAME, build_reference_data
 from decision_making.ml_model.model_persistence import save_model
-from decision_making.models import RandomForestReturnModel
-from decision_making.validation import run_walk_forward_validation
+from decision_making.ml_model.models import RandomForestReturnModel
+from decision_making.ml_model.validation import run_walk_forward_validation
 
 """Train and evaluate Random Forest model for S&P 500 return prediction.
 

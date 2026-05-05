@@ -5,6 +5,7 @@ exp_name: "ablation_enhanced_memory_longer"
 tickers:
   - TSLA
   - BTC
+portfolio_mode: market_timing # risk_managed (paper portfolio), market_timing (pure signal implementation)
 enriched_memory: true  # false for standard memory, true for enriched memory with past hit rate
 
 # Workflow execution mode

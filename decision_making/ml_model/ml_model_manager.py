@@ -74,8 +74,8 @@ def _train_initial_model(model_dir: Path) -> None:
 
     from decision_making.ml_model.feature_engineering import build_feature_matrix
     from decision_making.ml_model.model_persistence import save_model
-    from decision_making.models import RandomForestReturnModel
-    from decision_making.validation import run_walk_forward_validation
+    from decision_making.ml_model.models import RandomForestReturnModel
+    from decision_making.ml_model.validation import run_walk_forward_validation
 
     cfg = TRAIN_CONFIG
 
