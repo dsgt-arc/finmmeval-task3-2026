@@ -2,6 +2,14 @@
 
 DS@GT StockTron: a mulit-agent trading workflow plus a competition-facing HTTP API for Task 3 (CLEF 2026 FinMMEval). The DS@GT StockTron has been build by initially forking [DeepFund](https://github.com/HKUSTDial/DeepFund) and modiyfing and enhancing its workflows and agents.
 
+## How It Works
+
+1. **Data ingestion** — price history, news articles, and SEC filings are loaded for the target ticker and trading date
+2. **Parallel analyst agents** — up to five specialist agents (`technical`, `company_news`, `company_news_enhanced`, `section_news`, `ml_model_online`) run concurrently, each emitting a `BULLISH / BEARISH / NEUTRAL` signal with confidence and rationale
+3. **Portfolio manager synthesis** — an LLM-backed portfolio manager receives all signals and produces a final `BUY / HOLD / SELL` decision with position sizing (market-timing or risk-managed mode)
+4. **State persistence** — decisions, signals, and portfolio state are written to SQLite for reproducibility and analysis
+5. **API serving** — the FastAPI wrapper receives organizer payloads and returns the final action within the 3-minute competition deadline
+
 This repository has following main pieces:
 - `decision_making/` contains the existing trading workflow, data loading, models, and SQLite-backed state.
 - `api/` contains the FastAPI wrapper that receives organizer payloads and returns the Task 3 signal: `BUY`, `HOLD`, or `SELL`.
@@ -300,11 +308,23 @@ For full plots (cumulative return curves, drawdown, rank heatmap) see `notebooks
 ### Research Questions
 
 **RQ1: Does incorporating a predictive time-series ML model as an agent tool improve investment performance?**
-Partially. Replacing the technical agent with `ml_model_online` consistently improves BTC performance (SR −0.29 → +0.15 paired with basic news; −0.30 → +0.40 paired with enhanced news), but TSLA results are mixed: the ML signal helps alongside naive news (+0.31 SR delta) yet slightly hurts alongside enhanced news (−0.24 SR delta). The benefit is asset-dependent, likely driven by the model's BULLISH bias aligning better with BTC's trend than TSLA's idiosyncratic volatility.
+Partially. In ablation studies, we see that replacing the technical agent with `ml_model_online` consistently improves BTC performance (SR −0.29 → +0.15 paired with basic news; −0.30 → +0.40 paired with enhanced news), but TSLA results are mixed: the ML signal helps alongside naive news (+0.31 SR delta) yet slightly hurts alongside enhanced news (−0.24 SR delta). The benefit is asset-dependent, likely driven by the model's BULLISH bias aligning better with BTC's trend than TSLA's idiosyncratic volatility.
 
 **RQ2: Does sophisticated sentiment analysis improve performance over naive aggregation?**
-Yes. Both enhanced approaches outperform the baseline (`company_news`). Switching to `company_news_enhanced` dramatically improves TSLA (SR −0.76 → −0.13) with negligible BTC impact, while `section_news` substantially improves BTC (CR −18.0 % → +2.7 %, SR −0.29 → +0.21) and moderately improves TSLA. Neither advanced variant degrades both assets simultaneously, confirming that more sophisticated sentiment signals are reliably additive.
+Yes. Both enhanced approaches outperform the baseline (`company_news`). In ablation studies, we see that switching to `company_news_enhanced` dramatically improves TSLA (SR −0.76 → −0.13) with negligible BTC impact, while `section_news` substantially improves BTC (CR −18.0 % → +2.7 %, SR −0.29 → +0.21) and moderately improves TSLA. Neither advanced variant degrades both assets simultaneously, confirming that more sophisticated sentiment signals are reliably additive.
 
+
+# Future Work
+
+The experiments above reveal several directions that could meaningfully extend this system:
+
+- **Expand asset coverage and time horizon.** The competition and backtests are limited to TSLA and BTC, which constrains evaluation to market-timing rather than stock selection. The short backtest horizon further limits confidence in results, as agent signal quality are better assessed over multi-year periods that capture full market cycles. Broadening to a larger universe of US equities with multi-decade data would enable a multi-agent stock selection workflow grounded in factor investing — an approach with strong empirical support for generating excess returns over long horizons ([Fama & French, 1993](https://www.sciencedirect.com/science/article/abs/pii/0304405X93900235); [Fama & French, 2015](https://www.sciencedirect.com/science/article/abs/pii/S0304405X14002323)). It would also help distinguish whether observed underperformance is idiosyncratic to TSLA or reflects a structural limitation in how agent signals generalize across asset classes.
+
+- **Stronger LLM backbone.** All experiments use `gpt-4.1-nano` for cost efficiency. Evaluating larger models (e.g., `gpt-5.5`, `Claude Opus 4.7`) could improve portfolio manager reasoning quality, particularly for multi-signal reconciliation on ambiguous days.
+
+- **Alternative ML models.** The RandomForest achieves 51.5 % accuracy with a high-recall BULLISH skew. Neurel network (ensembles) could improve prediction quality; additionally, training on crypto-specific features rather than S&P 500 cross-sections may better serve BTC.
+
+- **Redesigned memory mechanism.** Both enriched-memory ablations (5-day and 10-day hit-rate windows) significantly hurt TSLA performance (SR down to −1.14). Alternative designs worth exploring include attention-weighted decision history.
 
 # Notes
 
