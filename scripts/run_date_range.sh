@@ -54,7 +54,7 @@ if [ "$#" -eq 0 ] || [ "$#" -eq 1 ]; then
 import sys
 import yaml
 from datetime import datetime, timedelta
-from ama_data import load_data
+from decision_making.ama_data import load_data
 
 # Load config to get first ticker
 with open("$CONFIG_PATH") as f:

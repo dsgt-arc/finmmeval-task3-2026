@@ -1,6 +1,6 @@
 import datetime
 
-from ama_data import load_specific_data
+from decision_making.ama_data import load_specific_data
 from graph.constants import AgentKey, Signal
 from graph.schema import AnalystSignal, FundState, RelevanceCheck
 from llm.cost_estimation import estimate_cost
@@ -173,7 +173,7 @@ def company_news_enhanced_agent(state: FundState):
             return {"analyst_signals": [signal]}
     except Exception as e:
         logger.error(f"Failed to fetch news for {ticker}: {e}")
-        return state
+        return {"analyst_signals": []}
 
     # Analyze article in different dimensions
     logger.log_agent_status(agent_name, ticker, "Estimating enhanceed sentiment via relevance-based and pargraph-level analysis")

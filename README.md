@@ -20,7 +20,7 @@ and fill in `OPENAI_API_KEY` if you plan to use the OpenAI-backed workflow.
 Download the competition data first:
 
 ```bash
-uv run python run_download_ama_data.py
+uv run python scripts/run_download_ama_data.py
 ```
 
 Run the workflow smoke test:
@@ -131,7 +131,7 @@ existing service first.
   3-minute organizer limit.
 - The server uses `PORT` when deployed to a host that provides one.
 - The SQLite database is created automatically the first time you run the workflow.
-- If the parquet files are missing, `run_download_ama_data.py` can rebuild them from Hugging Face.
+- If the parquet files are missing, `scripts/run_download_ama_data.py` can rebuild them from Hugging Face.
 - `docs/archive/README_ARCHIVE.md` preserves the original template README for reference.
 - `CLAUDE.md` at the repo root contains the active working notes for the project.
 - `pyproject.toml` is the single source of truth for dependencies.

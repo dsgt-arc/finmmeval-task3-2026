@@ -46,7 +46,7 @@ COMMON_COPY_PATHS = [
     Path("uv.lock"),
     Path("api"),
     Path("decision_making"),
-    Path("run_download_ama_data.py"),
+    Path("scripts") / "run_download_ama_data.py",
 ]
 ARTIFACT_REPO = "cloud-run-source-deploy"
 

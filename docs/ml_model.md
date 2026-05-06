@@ -11,7 +11,7 @@ The ML model is a **Random Forest binary classifier** that predicts whether a st
 | Model type | `RandomForestClassifier` (sklearn) |
 | Target | Binary: 1 if next-day return > 0, else 0 |
 | Output | Probability of positive return → converted to analyst signal |
-| Training data cutoff | `COMPETITION_TRAIN_START = "2024-08-01"` (config.py) |
+| Training data cutoff | `COMPETITION_TRAIN_START = "2026-05-04"` (config.py) |
 | Ensemble size | 500 trees (initial), grows during online learning |
 
 ---
@@ -171,7 +171,7 @@ A key requirement for online learning is that inference features match the forma
 
 ```
 Pre-training (static)
-  Historical S&P 500 prices (up to 2024-08-01)
+  Historical S&P 500 prices (up to 2026-05-04)
     → Walk-forward validation
     → Final model: 500 trees
     → Saved to disk

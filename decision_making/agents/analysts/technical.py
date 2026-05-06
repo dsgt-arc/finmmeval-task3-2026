@@ -66,7 +66,7 @@ def technical_agent(state: FundState):
         ).to_pandas()  # Convert to pandas for easier technical analysis calculations
     except Exception as e:
         logger.error(f"Failed to fetch price data for {ticker}: {e}")
-        return state
+        return {"analyst_signals": []}
 
     # Analyze technical indicators
     signal_results = {

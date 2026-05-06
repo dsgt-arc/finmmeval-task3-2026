@@ -36,7 +36,7 @@ def company_news_agent(state: FundState):
         company_news = load_specific_data(symbol=ticker, date=historic_date, type="news")
     except Exception as e:
         logger.error(f"Failed to fetch company news for {ticker}: {e}")
-        return state
+        return {"analyst_signals": []}
 
     # Analyze news sentiment via LLM
     prompt = COMPANY_NEWS_PROMPT.format(news=company_news)

@@ -3,7 +3,7 @@
 All other modules import from here — never define these values elsewhere.
 """
 
-COMPETITION_TRAIN_START = "2024-08-01"
+COMPETITION_TRAIN_START = "2026-05-04"
 
 LAGS = [1, 5, 21]
 MIN_OBS = 400

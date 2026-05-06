@@ -15,7 +15,7 @@ COPY api /app/api
 COPY decision_making /app/decision_making
 COPY data /app/data
 COPY output /app/output
-COPY run_download_ama_data.py /app/
+COPY scripts/run_download_ama_data.py /app/run_download_ama_data.py
 
 # Install the project into the container. The competition data is baked into
 # the image, so the API will not re-download it at runtime.
