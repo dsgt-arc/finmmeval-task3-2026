@@ -137,7 +137,7 @@ uv run python scripts/train_ml_model_simple.py
 
 The artifacts of the trained model are stored in `output/`. If you are interested to change any hyperparameters or other machine-learning model settings, please adjust them in `decision_making/ml_model/config.py`. You can also learn more about the model and other optionalities via `docs/ml_model.md`.
 
-## Multi-Agent Trading Configs
+### Multi-Agent Trading Configs
 
 Each YAML file in `decision_making/config/` defines a trading workflow by specifying which analyst agents to activate (`workflow_analysts`), the target tickers, and LLM settings. `api.yaml` is the production default and runs all five agents in parallel (`technical`, `company_news`, `company_news_enhanced`, `ml_model_online`, `section_news`). The `tesla_btc_baseline.yaml` provides a minimal two-agent baseline for comparison, while configs prefixed with `ablation_` isolate individual agents to measure each one's contribution to the trading signal.
 
@@ -149,7 +149,7 @@ uv run scripts/run_date_range.sh decision_making/config/YOUR_CONFIG_SELECTED.yam
 
 The DS@GT StockTron will now run from 2024-08-01 until the last date available in competition data. If you downloaded the competition data on day T, then the competition data is T-1. All results and agent decisions will be stored at the sqlite database `data/dsgt_stocktron.db`. Feel free to have a look inside the sqlite database, for example with DBeaver.
 
-## Evaluation
+### Evaluation
 
 Finally, you may use the notebook `notebooks/20260426-mh-market-timing-performance.ipynb` to evaluate the pure-signal based performance (in spirit of the FinMMEval Task 3). When you want to compare multiple backtest, use `notebooks/20260427-mh-experiment-comparison.ipynb` instead.
 
