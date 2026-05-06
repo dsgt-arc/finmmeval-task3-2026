@@ -55,6 +55,26 @@ def get_all_portfolio_records(db: SQLiteDB, config_id: str, filter_corrupted: bo
         conn.close()
 
 
+def get_portfolio_timeseries(db: SQLiteDB, config_id: str) -> pl.DataFrame:
+    """
+    Portfolio records with derived daily_return_pct and cumulative_return_pct columns.
+
+    Returns:
+        Polars DataFrame with columns: trading_date, cashflow, total_assets, positions,
+        daily_return_pct, cumulative_return_pct
+    """
+    df = get_all_portfolio_records(db, config_id)
+    if len(df) == 0:
+        return df
+    if df["trading_date"].dtype in (pl.Utf8, pl.String):
+        df = df.with_columns(pl.col("trading_date").str.to_datetime())
+    initial_assets = df["total_assets"][0]
+    return df.with_columns([
+        ((pl.col("total_assets") / pl.col("total_assets").shift(1) - 1) * 100).alias("daily_return_pct"),
+        ((pl.col("total_assets") / initial_assets - 1) * 100).alias("cumulative_return_pct"),
+    ])
+
+
 def get_all_decisions(db: SQLiteDB, config_id: str) -> pl.DataFrame:
     """
     Get all trading decisions for a config.

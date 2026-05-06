@@ -27,14 +27,14 @@ from graph.schema import AnalystSignal, FundState
 from llm.cost_estimation import estimate_cost
 from llm.inference import agent_call
 from llm.prompt import SECTION_NEWS_AGGREGATE_PROMPT, SECTION_SCORE_PROMPT
-from news_classifier import classify_items
-from news_pipeline import ingest_news
+from news.classifier import classify_items
+from news.pipeline import ingest_news
 from pydantic import BaseModel, Field
 from util.db_helper import get_db
 from util.logger import logger
 
 if TYPE_CHECKING:
-    from news_pipeline import NewsItem
+    from news.pipeline import NewsItem
 
 
 class _SectionScore(BaseModel):
