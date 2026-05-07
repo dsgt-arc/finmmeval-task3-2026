@@ -119,8 +119,51 @@ def load_data(symbol: str, download_if_missing: bool = True, competition_data: b
     return pl.read_parquet(local_path)
 
 
+def _payload_price_frame(payload: dict | None, symbol: str, date: datetime.date | None = None) -> pl.DataFrame:
+    """Build a price frame from the competition payload if available.
+
+    The payload may contain a sparse historical series in `history_price` plus a
+    current-day point in `price`. We merge those into a single time series and
+    let the caller decide whether to combine them with local parquet history.
+    """
+    if not payload:
+        return pl.DataFrame(schema={"date": pl.Date, "prices": pl.Float64})
+
+    rows: list[dict[str, object]] = []
+    history_map = payload.get("history_price") or {}
+    for row in history_map.get(symbol) or []:
+        if not row:
+            continue
+        row_date = row.get("date")
+        row_price = row.get("price")
+        if row_date is None or row_price is None:
+            continue
+        rows.append({"date": row_date, "prices": row_price})
+
+    payload_date = payload.get("date")
+    price_map = payload.get("price") or {}
+    if payload_date is not None and symbol in price_map:
+        rows.append({"date": payload_date, "prices": price_map[symbol]})
+
+    if not rows:
+        return pl.DataFrame(schema={"date": pl.Date, "prices": pl.Float64})
+
+    df = pl.DataFrame(rows).with_columns(
+        pl.col("date").cast(pl.Date),
+        pl.col("prices").cast(pl.Float64),
+    )
+    if date is not None:
+        df = df.filter(pl.col("date") <= date)
+    return df.unique(subset=["date"], keep="last").sort("date")
+
+
 def load_specific_data(
-    symbol: str, date: str, type: str, download_if_missing: bool = True, competition_data: bool = True
+    symbol: str,
+    date: str,
+    type: str,
+    download_if_missing: bool = True,
+    competition_data: bool = True,
+    api_payload: dict | None = None,
 ) -> pl.DataFrame:
     """Load data for a specific symbol, date, and type.
     Args:
@@ -147,10 +190,30 @@ def load_specific_data(
         # price needs to include all data up to day t-1 for technical analysis
         date_data = symbol_data.filter(date_col <= date)
         specific_date_data = date_data.select(date_col, price_col)
+
+        payload_prices = _payload_price_frame(api_payload, symbol, date)
+        if not payload_prices.is_empty():
+            specific_date_data = (
+                pl.concat([specific_date_data, payload_prices], how="vertical")
+                .unique(subset=["date"], keep="last")
+                .sort("date")
+            )
     elif type == "current_price":
-        # current price is the price of the specific date
-        date_data = symbol_data.filter(date_col == date)
-        specific_date_data = date_data.select(price_col).item()
+        # current price is the price of the specific date.
+        # If the exact date is missing, fall back to the latest available
+        # trading day at or before the requested date so weekends / lagged
+        # competition data do not crash the workflow.
+        payload_prices = _payload_price_frame(api_payload, symbol, date)
+        if not payload_prices.is_empty():
+            date_data = payload_prices.filter(date_col <= date)
+        else:
+            date_data = symbol_data.filter(date_col == date)
+        if date_data.is_empty():
+            date_data = symbol_data.filter(date_col < date)
+            if date_data.is_empty():
+                raise ValueError(f"No price data available on or before {date} for {symbol}")
+            date_data = date_data.sort(date_col).tail(1)
+        specific_date_data = date_data.select(price_col).tail(1).item()
     else:
         raise ValueError(f"Unknown type: {type}. Available types: 'news', 'price'")
     return specific_date_data

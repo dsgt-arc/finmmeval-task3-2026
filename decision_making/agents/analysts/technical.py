@@ -50,6 +50,8 @@ def technical_agent(state: FundState):
     trading_date = state["trading_date"]
     llm_config = state["llm_config"]
     portfolio_id = state["portfolio_id"]
+    api_payload = state.get("api_payload")
+    market_date = trading_date if api_payload else trading_date - datetime.timedelta(days=1)
 
     # Get db instance
     db = get_db()
@@ -58,9 +60,7 @@ def technical_agent(state: FundState):
 
     # Get the price data
     try:
-        # access t-1 news data for ticker
-        historic_date = trading_date - datetime.timedelta(days=1)
-        prices_df = load_specific_data(symbol=ticker, date=historic_date, type="price")
+        prices_df = load_specific_data(symbol=ticker, date=market_date, type="price", api_payload=api_payload)
         prices_df = (
             prices_df.with_columns(pl.col("prices").alias("close"))
         ).to_pandas()  # Convert to pandas for easier technical analysis calculations
