@@ -31,7 +31,7 @@ def _prev_trading_day(date: datetime.date) -> datetime.datetime:
     return datetime.datetime.combine(schedule.index[-1].date(), datetime.time.min)
 
 
-def _load_prices_for_inference(ticker: str, date, adj_close_wide) -> pl.DataFrame:
+def _load_prices_for_inference(ticker: str, date, adj_close_wide, api_payload: dict | None = None) -> pl.DataFrame:
     """Load price history for a ticker, merging yfinance + competition data.
 
     For tickers present in both sources (e.g. TSLA), concatenates the full
@@ -47,7 +47,7 @@ def _load_prices_for_inference(ticker: str, date, adj_close_wide) -> pl.DataFram
     Returns:
         Polars DataFrame with columns ['date', 'prices'], sorted ascending
     """
-    comp_df = load_specific_data(ticker, date, type="price")  # Polars ['date', 'prices']
+    comp_df = load_specific_data(ticker, date, type="price", api_payload=api_payload)  # Polars ['date', 'prices']
 
     if adj_close_wide is None or ticker not in adj_close_wide.columns:
         return comp_df
@@ -90,7 +90,9 @@ def ml_model_online(state: FundState):
     trading_date = state["trading_date"]
     llm_config = state["llm_config"]
     portfolio_id = state["portfolio_id"]
+    api_payload = state.get("api_payload")
     prev_date = _prev_trading_day(trading_date)
+    market_date = trading_date if api_payload else prev_date
 
     # Get db instance
     db = get_db()
@@ -162,7 +164,7 @@ def ml_model_online(state: FundState):
     # --- Step 2: Predict for competition ticker ---
     prompt = ""
     try:
-        prices_df = _load_prices_for_inference(ticker, prev_date, price_data)
+        prices_df = _load_prices_for_inference(ticker, market_date, price_data, api_payload=api_payload)
         try:
             features = build_single_stock_features(prices_df, ticker, manager.reference_data)
         except ValueError:
@@ -170,7 +172,7 @@ def ml_model_online(state: FundState):
             if proxy is None:
                 raise
             logger.info(f"[{agent_name}] Insufficient obs for {ticker}, using proxy {proxy}")
-            proxy_prices_df = _load_prices_for_inference(proxy, prev_date, price_data)
+            proxy_prices_df = _load_prices_for_inference(proxy, market_date, price_data, api_payload=api_payload)
             features = build_single_stock_features(proxy_prices_df, proxy, manager.reference_data)
 
         # Fill any feature columns missing from inference (e.g. sector_Unknown)

@@ -55,12 +55,18 @@ def _run_portfolio(state: FundState, enriched_memory: bool):
     trading_date = state["trading_date"]
     analyst_signals = state["analyst_signals"]
     llm_config = state["llm_config"]
+    api_payload = state.get("api_payload")
+    market_date = trading_date if api_payload else trading_date - datetime.timedelta(days=1)
 
     db = get_db()
 
     try:
-        historic_date = trading_date - datetime.timedelta(days=1)
-        current_price = load_specific_data(symbol=ticker, date=historic_date, type="current_price")
+        current_price = load_specific_data(
+            symbol=ticker,
+            date=market_date,
+            type="current_price",
+            api_payload=api_payload,
+        )
     except Exception as e:
         logger.error(f"Failed to fetch price data for {ticker}: {e}")
         raise RuntimeError("Failed to make decision") from e
@@ -147,12 +153,18 @@ def portfolio_agent_risk_managed(state: FundState):
     analyst_signals = state["analyst_signals"]
     llm_config = state["llm_config"]
     num_tickers = state["num_tickers"]
+    api_payload = state.get("api_payload")
+    market_date = trading_date if api_payload else trading_date - datetime.timedelta(days=1)
 
     db = get_db()
 
     try:
-        historic_date = trading_date - datetime.timedelta(days=1)
-        current_price = load_specific_data(symbol=ticker, date=historic_date, type="current_price")
+        current_price = load_specific_data(
+            symbol=ticker,
+            date=market_date,
+            type="current_price",
+            api_payload=api_payload,
+        )
     except Exception as e:
         logger.error(f"Failed to fetch price data for {ticker}: {e}")
         raise RuntimeError("Failed to make decision") from e
