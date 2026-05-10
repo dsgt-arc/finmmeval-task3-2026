@@ -1,0 +1,26 @@
+# DS@GT StockTron Configuration
+#
+# Lightweight portfolio-manager config used by the API integration tests and
+# local smoke runs. It keeps the workflow minimal while still exercising the
+# full decision path.
+exp_name: "debug_pm"
+
+# Trading settings
+cashflow: 100000
+tickers:
+  - TSLA
+portfolio_mode: market_timing # risk_managed (paper portfolio), market_timing (pure signal implementation)
+enriched_memory: false # whether to consider past hit-rate in market_timing or not
+
+# Workflow execution mode
+sequential_mode: false  # false for parallel, true for sequential execution
+
+# Analysts to run, refer to graph.constants.py
+workflow_analysts:
+  - dummy
+
+# LLM model settings, refer to llm/inference.py: LLMConfig
+llm:
+  provider: "OpenAI"
+  model: "gpt-4.1-nano"
+  temperature: 0
